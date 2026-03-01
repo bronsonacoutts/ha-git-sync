@@ -1,0 +1,111 @@
+# automations.yaml — Git Sync Automations Snippet
+#
+# Append these entries to your existing /config/automations.yaml.
+# IMPORTANT: every automation needs a unique id. The IDs below are safe
+# to use as-is; change them only if they clash with IDs already in your file.
+
+- id: '1767772677262'
+  alias: '[Maintenance] Reload Automations After Git Sync'
+  description: 'Reload automations whenever a git sync completes'
+  trigger:
+  - entity_id: script.maintenance_git_sync_config
+    from: 'on'
+    to: 'off'
+    trigger: state
+  condition: []
+  action:
+  - data: {}
+    action: automation.reload
+  mode: single
+
+- id: '1767772690727'
+  alias: '[Maintenance] Git Sync Hourly'
+  description: 'Pull from GitHub then push local changes every hour'
+  trigger:
+  - hours: '*'
+    minutes: 0
+    trigger: time_pattern
+  condition: []
+  action:
+  - target:
+      entity_id: script.maintenance_git_sync_config
+    action: script.turn_on
+  mode: single
+
+- id: '1767773315131'
+  alias: '[Maintenance] Push Git Config After UI Changes (lovelace_updated)'
+  description: 'Debounced push whenever the Lovelace dashboard is saved'
+  trigger:
+  - event_type: lovelace_updated
+    trigger: event
+  condition: []
+  action:
+  - target:
+      entity_id: script.maintenance_git_push_config
+    action: script.turn_on
+  mode: single
+
+- id: '1772117850002'
+  alias: '[Maintenance] Nightly Config Backup'
+  description: 'Commit with dated message and push at 03:00 every night'
+  trigger:
+  - at: '03:00:00'
+    trigger: time
+  condition: []
+  action:
+  - action: shell_command.git_nightly_backup
+  mode: single
+
+- id: '1772117850003'
+  alias: '[Maintenance] Weekly Config Snapshot'
+  description: 'Create a tar.gz snapshot every Sunday at 02:30'
+  trigger:
+  - at: '02:30:00'
+    trigger: time
+  condition:
+  - condition: time
+    weekday:
+    - sun
+  action:
+  - action: shell_command.git_weekly_snapshot
+  mode: single
+
+- id: '1772117850004'
+  alias: '[Maintenance] Monthly Backup Tag Cleanup'
+  description: 'Prune backup/nightly-* tags older than 30 days on the 1st'
+  trigger:
+  - at: '04:00:00'
+    trigger: time
+  condition:
+  - condition: template
+    value_template: "{{ now().day == 1 }}"
+  action:
+  - action: shell_command.git_cleanup_backups
+  mode: single
+
+- id: '1772117850005'
+  alias: '[Maintenance] Install Git Hooks On Startup'
+  description: 'Ensure commit-msg and pre-push hooks are active after every HA restart'
+  trigger:
+  - trigger: homeassistant
+    event: start
+  condition: []
+  action:
+  - action: shell_command.install_git_hooks
+  mode: single
+
+- id: '1772117850006'
+  alias: '[Maintenance] Optional Alias Auto-Correction Weekly'
+  description: 'Optional: normalize automation aliases weekly before backup'
+  trigger:
+  - at: '01:45:00'
+    trigger: time
+  condition:
+  - condition: time
+    weekday:
+    - sun
+  action:
+  - target:
+      entity_id: script.maintenance_fix_automation_aliases
+    action: script.turn_on
+  mode: single

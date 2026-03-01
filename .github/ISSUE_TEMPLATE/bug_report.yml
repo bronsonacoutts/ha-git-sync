@@ -1,0 +1,78 @@
+name: Bug Report
+description: Report a reproducible issue with sync behavior, workflows, or docs.
+title: "bug: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting this. Please include concrete repro details so maintainers can act quickly.
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: One-sentence description of the problem.
+      placeholder: Sync job fails when pulling from origin/main after repository rename.
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      description: List exact steps, commands, and files involved.
+      placeholder: |
+        1. Run bash scripts/git_sync.sh
+        2. Observe failure during git fetch
+        3. See error output below
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant logs/output
+      description: Paste minimal, redacted logs. Do not include secrets.
+      render: shell
+  - type: dropdown
+    id: ha_install
+    attributes:
+      label: Home Assistant installation type
+      options:
+        - Home Assistant OS
+        - Home Assistant Container
+        - Home Assistant Supervised
+        - Home Assistant Core
+        - Not sure
+    validations:
+      required: true
+  - type: input
+    id: ha_version
+    attributes:
+      label: Home Assistant version
+      placeholder: "2026.2.0"
+  - type: input
+    id: repo_mode
+    attributes:
+      label: Repository visibility
+      placeholder: "private or public"
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checklist
+      options:
+        - label: I confirmed this is not a support question better suited for Discussions.
+          required: true
+        - label: I removed or redacted secrets from logs and screenshots.
+          required: true

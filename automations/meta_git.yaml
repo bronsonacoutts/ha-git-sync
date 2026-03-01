@@ -1,0 +1,89 @@
+# Maintenance / Git-related automations
+# NOTE: This file is NOT loaded by Home Assistant. It is a reference copy.
+# The live automations are in /automations.yaml (root).
+# See automations/README.md for details.
+
+- alias: "[Maintenance] Reload Automations After Git Sync"
+  id: '1767772677262'
+  description: "Tags: [Domain: Maintenance, Trigger: Git Sync Complete, Action: Reload Automations]"
+  trigger:
+  - platform: state
+    entity_id: script.maintenance_git_sync_config
+    from: "on"
+    to: "off"
+  condition: []
+  action:
+  - action: automation.reload
+    data: {}
+  mode: single
+
+- alias: "[Maintenance] Git Sync Hourly"
+  id: '1767772690727'
+  description: "Tags: Maintenance, Git, Sync, Schedule"
+  trigger:
+  - platform: time_pattern
+    hours: "*"
+    minutes: 0
+  condition: []
+  action:
+  - target:
+      entity_id: script.maintenance_git_sync_config
+    action: script.turn_on
+  mode: single
+
+- alias: "[Maintenance] Push Git Config After UI Changes (lovelace_updated)"
+  id: '1767773315131'
+  description: "Tags: Maintenance, Git, Push, UI"
+  trigger:
+  - platform: event
+    event_type: lovelace_updated
+  condition: []
+  action:
+  - target:
+      entity_id: script.maintenance_git_push_config
+    action: script.turn_on
+  mode: single
+
+- alias: "[Maintenance] Git Sync Before Major Changes"
+  id: '1772117850001'
+  description: "Tags: Maintenance, Git, Sync, Pre-Edit"
+  trigger:
+  - platform: state
+    entity_id: input_boolean.maintenance_major_changes
+    to: "on"
+  condition: []
+  action:
+  - target:
+      entity_id: script.maintenance_git_sync_config
+    action: script.turn_on
+  - action: notify.persistent_notification
+    data:
+      message: "Git Sync triggered before major changes"
+  mode: single
+
+# Nightly backup of /config to GitHub
+- alias: "[Maintenance] Nightly Config Backup"
+  id: '1772117850002'
+  description: "Tags: Maintenance, Git, Backup, Schedule"
+  trigger:
+  - platform: time
+    at: "03:00:00"
+  condition: []
+  action:
+  - action: shell_command.git_nightly_backup
+  mode: single
+
+# Weekly full config snapshot (tar.gz) committed to repo
+- alias: "[Maintenance] Weekly Config Snapshot"
+  id: '1772117850003'
+  description: "Tags: Maintenance, Git, Snapshot, Schedule"
+  trigger:
+  - platform: time
+    at: "02:30:00"
+  condition:
+  - condition: time
+    weekday:
+    - sun
+  action:
+  - action: shell_command.git_weekly_snapshot
+  mode: single

@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+# post-merge – Git hook executed after a successful `git merge` (including `git pull`).
+#
+# Install:
+#   Copy or symlink this file to .git/hooks/post-merge inside your HA config
+#   repository and make it executable:
+#
+#     cp hooks/post-merge /config/.git/hooks/post-merge
+#     chmod +x /config/.git/hooks/post-merge
+#
+# What it does:
+#   Prints a confirmation that the merge completed. Optionally, uncomment one
+#   of the HA reload/restart commands below to automatically apply config
+#   changes after every pull.
+#
+# NOTE: Restarting HA automatically after every pull is convenient but carries
+# risk. Review incoming changes before enabling auto-restart in production.
+
+set -euo pipefail
+
+echo "[ha-git-sync] post-merge: merge completed successfully."
+
+# -- Optional: reload HA configuration (no downtime, applies most changes) ----
+# Requires the Home Assistant CLI (available inside the HA SSH addon).
+#
+# ha core reload
+
+# -- Optional: full HA restart (required for integration/platform changes) ----
+# Requires the Home Assistant CLI.
+#
+# ha core restart
+
+# -- Optional: reload via REST API (useful when HA CLI is not available) ------
+# Set SUPERVISOR_TOKEN in the environment or replace with a long-lived token.
+# See docs/prerequisites.md for token setup.
+#
+# curl --silent --show-error \
+#   --request POST \
+#   --header "Authorization: Bearer ${SUPERVISOR_TOKEN}" \
+#   http://supervisor/core/reload

@@ -1,0 +1,42 @@
+# Home Assistant runtime files (not committed)
+home-assistant.log*
+home-assistant_v2.db*
+.homeassistant/
+.ha_run.lock
+zigbee.db*
+*.db-shm
+*.db-wal
+
+# Sensitive files — never commit these
+secrets.yaml
+.gitconfig
+.git-credentials
+.ssh/id_*
+.ssh/known_hosts
+.ssh/config
+
+# Backups (large files)
+backup/
+.backups/
+backups/*.tar.gz
+
+# HA storage / cloud
+.cloud/
+.storage/
+
+# TTS cache
+tts/
+
+# Python caches
+__pycache__/
+*.pyc
+
+# Editor / OS
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Local repo-audit helper script
+scripts/check-repo-config.sh
+_private/forum-post.md

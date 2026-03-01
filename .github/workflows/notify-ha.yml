@@ -1,0 +1,48 @@
+# .github/workflows/notify-ha.yml
+#
+# Sends a webhook to Home Assistant after every push to the main branch,
+# triggering the git_sync_pull_on_webhook automation to pull the latest config.
+#
+# REQUIRED REPOSITORY SECRET
+# --------------------------
+# HA_WEBHOOK_URL
+#   Purpose : Full HTTPS URL of the HA webhook endpoint, including the webhook
+#             ID in the path. GitHub Actions will POST to this URL.
+#   Format  : https://<your-ha-instance>/api/webhook/<git_sync_webhook_id>
+#             Example: https://ha.example.com/api/webhook/abc123def456...
+#   Used in : This workflow (the `curl` step below).
+#
+# Set this secret at:
+#   Your repo → Settings → Secrets and variables → Actions → New repository secret
+#   Name: HA_WEBHOOK_URL
+#
+# NOTE: The webhook ID embedded in the URL acts as a shared secret.
+# Keep HA_WEBHOOK_URL confidential — do not log or echo it in workflow steps.
+#
+# PERMISSIONS
+# -----------
+# This workflow uses only `contents: read` (the minimum required to check out
+# nothing — no checkout step is needed). The GITHUB_TOKEN is not forwarded to
+# Home Assistant.
+
+name: Notify Home Assistant
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  notify-ha:
+    name: Send webhook to Home Assistant
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: POST webhook to Home Assistant
+        run: |
+          curl --fail --silent --show-error \
+            --request POST \
+            --header "Content-Type: application/json" \
+            --data '{"source":"github-actions","ref":"${{ github.ref_name }}","sha":"${{ github.sha }}"}' \
+            "${{ secrets.HA_WEBHOOK_URL }}"

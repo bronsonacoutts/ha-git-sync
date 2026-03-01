@@ -1,0 +1,33 @@
+# Git Configuration for Home Assistant
+# Copy this file to /config/.gitconfig and customize with your details
+
+[user]
+    name = Your Name
+    email = your.email@example.com
+
+[safe]
+    # Required for Home Assistant container operations
+    directory = /config
+
+[core]
+    # Recommended settings
+    autocrlf = input
+    filemode = false
+
+[pull]
+    # Use rebase to keep history clean
+    rebase = false
+
+[merge]
+    # Favor local changes in conflicts (used by git_sync.sh)
+    conflictstyle = diff3
+
+# For HTTPS authentication (choose ONE method):
+# Method 1: Credential helper with Personal Access Token
+# [credential]
+#     helper = store
+# Then create /config/.git-credentials with:
+# https://<username>:<PAT>@github.com
+
+# Method 2: Direct URL with PAT embedded (less secure, easier)
+# Set remote URL with: git remote set-url origin https://<username>:<PAT>@github.com/<username>/home-assistant-config.git

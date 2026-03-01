@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+# commit-msg hook: enforces a minimal commit message standard.
+#
+# Rules:
+#   1. Message must not be empty.
+#   2. Message must be at least 10 characters long.
+#   3. Message must not be a bare placeholder ("wip", "fix", "temp", "test", "asdf").
+#
+# Automated HA commits (starting with "HA " or env HA_GIT_AUTOMATED=1) are
+# always allowed through without validation.
+
+MSG_FILE="$1"
+MSG=$(cat "$MSG_FILE")
+
+# Strip comment lines (lines starting with #) to get the real message
+REAL_MSG=$(echo "$MSG" | grep -v '^#' | sed '/^[[:space:]]*$/d')
+
+# Allow automated HA commits
+if [[ "${HA_GIT_AUTOMATED:-}" == "1" ]]; then
+    exit 0
+fi
+if echo "$REAL_MSG" | grep -qiE '^HA '; then
+    exit 0
+fi
+
+# Rule 1: non-empty
+if [[ -z "$REAL_MSG" ]]; then
+    echo "❌ Commit message is empty. Please provide a meaningful message." >&2
+    exit 1
+fi
+
+# Rule 2: minimum length
+if [[ ${#REAL_MSG} -lt 10 ]]; then
+    echo "❌ Commit message is too short (${#REAL_MSG} chars). Use at least 10 characters." >&2
+    exit 1
+fi
+
+# Rule 3: no bare placeholders
+if echo "$REAL_MSG" | grep -qiE '^(wip|fix|temp|test|asdf|xxx|todo|update|changes?)$'; then
+    echo "❌ Commit message '${REAL_MSG}' is a bare placeholder. Describe what you changed." >&2
+    exit 1
+fi
+
+exit 0

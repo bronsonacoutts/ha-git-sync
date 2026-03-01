@@ -1,0 +1,39 @@
+name: Feature Request
+description: Suggest an improvement while keeping safe defaults and predictable sync behavior.
+title: "feat: "
+labels:
+  - enhancement
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem statement
+      description: What user problem are you trying to solve?
+      placeholder: It is hard to understand why an optional workflow did not open a PR.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: Describe the smallest useful change.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+  - type: textarea
+    id: impact
+    attributes:
+      label: Safety and behavior impact
+      description: Explain any risk to existing sync jobs or security defaults.
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checklist
+      options:
+        - label: This request does not require weakening security defaults.
+          required: true
+        - label: I included enough context to estimate scope.
+          required: true

@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+# pre-push hook: prevents direct interactive pushes to the main branch.
+#
+# Automated HA scripts set HA_GIT_AUTOMATED=1 before calling git push,
+# which bypasses this check entirely.  All feature/*, hotfix/*, develop
+# pushes are always allowed.
+#
+# To push a quick fix directly to main (emergency only), run:
+#   HA_GIT_AUTOMATED=1 git push origin main
+
+while read -r _local_ref local_sha remote_ref _remote_sha; do
+    # Only enforce the rule on pushes targeting main
+    if [[ "$remote_ref" == "refs/heads/main" ]]; then
+        # Allow automated HA git scripts
+        if [[ "${HA_GIT_AUTOMATED:-}" == "1" ]]; then
+            continue
+        fi
+        # Check if this looks like it came from an HA automated script
+        # by inspecting the most recent commit message
+        LAST_MSG=$(git log -1 --format="%s" "$local_sha" 2>/dev/null || true)
+        if echo "$LAST_MSG" | grep -qiE '^HA (config|nightly|weekly|pre-)'; then
+            continue
+        fi
+        echo "" >&2
+        echo "⛔  Direct push to 'main' is not allowed." >&2
+        echo "   Please use a branch and open a Pull Request:" >&2
+        echo "" >&2
+        echo "   git checkout -b feature/my-change" >&2
+        echo "   git push origin feature/my-change" >&2
+        echo "   # Then open a PR on GitHub." >&2
+        echo "" >&2
+        echo "   Or on the HASS box, use:" >&2
+        echo "   /config/scripts/git_create_branch.sh feature my-change" >&2
+        echo "" >&2
+        echo "   (For automated HA scripts this check is bypassed automatically.)" >&2
+        exit 1
+    fi
+done
+
+exit 0

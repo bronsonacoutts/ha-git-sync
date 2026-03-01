@@ -1,0 +1,15 @@
+# configuration.yaml — Git Sync Shell Command Snippet
+#
+# Add this block to your existing /config/configuration.yaml.
+# If you already have a shell_command: block, add the keys inside it
+# (do NOT create a second shell_command: block).
+
+shell_command:
+  git_pull: /bin/bash /config/scripts/git_pull.sh
+  git_push: /bin/bash /config/scripts/git_push.sh
+  git_status: /bin/bash /config/scripts/git_status.sh
+  git_nightly_backup: /bin/bash /config/scripts/git_nightly_backup.sh
+  git_weekly_snapshot: /bin/bash /config/scripts/git_weekly_snapshot.sh
+  git_cleanup_backups: /bin/bash /config/scripts/git_cleanup_backups.sh
+  install_git_hooks: /bin/bash /config/scripts/install_git_hooks.sh
+  fix_automation_aliases: /bin/bash /config/scripts/fix_automation_aliases.sh

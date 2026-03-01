@@ -1,0 +1,37 @@
+# scripts.yaml — Git Sync HA Scripts Snippet
+#
+# Add this to your /config/scripts.yaml (create the file if it doesn't exist).
+# Ensure configuration.yaml contains:  script: !include scripts.yaml
+
+maintenance_git_sync_config:
+  alias: "[Maintenance] Git Sync Config"
+  description: "Pull upstream changes then push local changes to origin"
+  sequence:
+    - service: shell_command.git_pull
+    - service: shell_command.git_push
+  mode: single
+
+maintenance_git_push_config:
+  alias: "[Maintenance] Git Push Config"
+  description: >-
+    Debounced push: waits for a 3-minute quiet window after the last UI change
+    before committing and pushing. mode: restart resets the timer on every new
+    trigger so rapid edits are batched into a single git operation.
+  sequence:
+    - delay: "00:03:00"
+    - service: shell_command.git_push
+  mode: restart
+
+maintenance_git_status:
+  alias: "[Maintenance] Git Status"
+  description: "Check git status of config directory"
+  sequence:
+    - service: shell_command.git_status
+  mode: single
+
+maintenance_fix_automation_aliases:
+  alias: "[Maintenance] Fix Automation Aliases"
+  description: "Optional: normalize automation aliases to [Area] Action (Trigger/Context) format"
+  sequence:
+    - service: shell_command.fix_automation_aliases
+  mode: single

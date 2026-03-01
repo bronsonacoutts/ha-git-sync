@@ -1,0 +1,76 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  shellcheck:
+    name: shellcheck
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Install shellcheck
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y shellcheck
+
+      - name: Run shellcheck
+        run: |
+          set -euo pipefail
+          find scripts -type f \( -name "*.sh" -o -path "scripts/git_hooks/*" \) -print0 | xargs -0 shellcheck
+
+      - name: Job summary
+        if: always()
+        run: |
+          {
+            echo "## CI / shellcheck"
+            echo "- Checked shell scripts under scripts/ and git hooks."
+            echo "- Use local command: shellcheck scripts/*.sh scripts/git_hooks/*"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  yamllint:
+    name: yamllint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Install yamllint
+        run: |
+          python3 -m pip install --user yamllint
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Create lint config
+        run: |
+          cat > .yamllint-ci.yaml <<'YAML'
+          extends: default
+          rules:
+            line-length:
+              max: 140
+              level: warning
+            truthy: disable
+            indentation: disable
+            comments-indentation: disable
+          YAML
+
+      - name: Run yamllint
+        run: |
+          set -euo pipefail
+          yamllint -c .yamllint-ci.yaml .
+
+      - name: Job summary
+        if: always()
+        run: |
+          {
+            echo "## CI / yamllint"
+            echo "- Checked YAML consistency across repository."
+            echo "- Uses repository CI config at .yamllint-ci.yaml."
+          } >> "$GITHUB_STEP_SUMMARY"

@@ -1,0 +1,53 @@
+# examples/automations/git_sync_push.yaml
+#
+# Home Assistant automation: push config changes to GitHub on demand.
+#
+# INSTALLATION
+# ------------
+# Option A – include_dir_merge_list (recommended):
+#   Place this file (or its contents) in your automations directory and add to
+#   configuration.yaml:
+#
+#     automation: !include_dir_merge_list automations/
+#
+# Option B – inline in configuration.yaml:
+#   Paste the automation block below into your `automation:` list.
+#
+# PREREQUISITES
+# -------------
+#   1. shell_command.git_push must be defined.
+#      See examples/shell_commands.yaml for the required definition.
+#   2. The sync scripts must be installed and executable:
+#        /config/scripts/ha-to-git.sh
+#      Run: chmod +x /config/scripts/ha-to-git.sh
+#   3. Create an input_button helper named `input_button.git_sync_push`:
+#        Settings → Helpers → Create Helper → Button
+#        Name: Git Sync Push   (HA will generate entity_id: input_button.git_sync_push)
+
+- id: "git_sync_push_on_demand"
+  alias: "Git Sync: Push config to GitHub"
+  description: >
+    Stages, commits, and pushes all config changes to GitHub when the
+    input_button.git_sync_push helper button is pressed.
+  trigger:
+    - platform: state
+      entity_id: input_button.git_sync_push
+  condition: []
+  action:
+    - service: shell_command.git_push
+      response_variable: push_result
+    - choose:
+        - conditions:
+            - condition: template
+              value_template: "{{ push_result.return_code == 0 }}"
+          sequence:
+            - service: persistent_notification.create
+              data:
+                title: "Git Sync"
+                message: "Config pushed to GitHub successfully."
+      default:
+        - service: persistent_notification.create
+          data:
+            title: "Git Sync: Push Failed"
+            message: "Git push failed (exit {{ push_result.return_code }}). Check the HA logs or run ha-to-git.sh from the terminal."
+  mode: single
