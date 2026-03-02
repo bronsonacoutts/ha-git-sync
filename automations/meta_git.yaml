@@ -51,7 +51,7 @@
 
 - alias: "[Maintenance] Reload Automations After Git Sync"
   id: '1767772677262'
-  description: "Reload automations whenever a git pull completes."
+  description: "Reload automations after the git sync script (pull + push) completes."
   trigger:
   - platform: state
     entity_id: script.maintenance_git_sync_config
