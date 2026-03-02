@@ -1,10 +1,14 @@
 name: CI
 
+# Runs when config changes are pushed to main or develop.
+# This workflow intentionally omits a pull_request trigger because the HA git sync
+# pushes configuration changes directly to the repository in deployed config repos.
 on:
-  pull_request:
   push:
     branches:
       - main
+      - develop
+  workflow_dispatch:
 
 permissions:
   contents: read
