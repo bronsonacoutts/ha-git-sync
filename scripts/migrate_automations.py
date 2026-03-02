@@ -9,7 +9,7 @@ Usage:
   python3 scripts/migrate_automations.py /config
 
 What it does:
-  - Scans automations.yaml and automations/*.yaml (same paths used by
+  - Scans automations.yaml, automations/*.yaml, and automations/*.yml (same paths used by
     validate_automations.py).
   - For each automation without an id, generates a stable 13-digit id
     derived from the automation alias using SHA-256.  Running the script
