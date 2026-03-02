@@ -19,22 +19,6 @@ REPO_ROOT="$(git -C "$(dirname "$0")" rev-parse --show-toplevel 2>/dev/null || e
 HOOKS_SRC="${REPO_ROOT}/scripts/git_hooks"
 GIT_HOOKS_DIR="${REPO_ROOT}/.git/hooks"
 
-ha_notify() {
-    # Use SUPERVISOR_TOKEN when available (running inside HA/supervisor context).
-    # Falls back to HA_NOTIFY_TOKEN for non-supervised environments.
-    local -a auth_args=()
-    if [[ -n "${SUPERVISOR_TOKEN:-}" ]]; then
-        auth_args=(-H "Authorization: Bearer ${SUPERVISOR_TOKEN}")
-    elif [[ -n "${HA_NOTIFY_TOKEN:-}" ]]; then
-        auth_args=(-H "Authorization: Bearer ${HA_NOTIFY_TOKEN}")
-    fi
-    curl -sf -X POST "http://localhost:8123/api/services/persistent_notification/create" \
-        "${auth_args[@]}" \
-        -H "Content-Type: application/json" \
-        -d "{\"title\":\"$1\",\"message\":\"$2\"}" \
-        || true
-}
-
 echo "==> Installing git hooks for: ${REPO_ROOT}"
 
 # ── 1. Install pre-commit framework ──────────────────────────────────────────
@@ -84,4 +68,3 @@ install_hook "pre-push"
 
 echo ""
 echo "==> All git hooks installed. Your commits will now be validated automatically."
-ha_notify "Git Hooks Installed" "commit-msg and pre-push hooks are active in ${REPO_ROOT}."

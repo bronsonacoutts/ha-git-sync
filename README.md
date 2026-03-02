@@ -129,14 +129,9 @@ git log --merges --oneline -20
 
 If your source-of-truth is GitHub instead of local HA, do **not** use the default scripts unchanged.
 
-## HA notifications auth
+## Notifications
 
-Script notifications to Home Assistant use one of these tokens when available:
-
-- `SUPERVISOR_TOKEN` (preferred in supervised/add-on contexts)
-- `HA_NOTIFY_TOKEN` (manual fallback for other environments)
-
-Without either token, notification calls are skipped as best-effort and never block git operations.
+This template uses the GitHub Actions webhook flow for remote notifications (`.github/workflows/notify-ha.yml` + `HA_WEBHOOK_URL`). Local shell scripts focus on sync operations and do not call the HA REST notification endpoint.
 
 ## Troubleshooting
 
