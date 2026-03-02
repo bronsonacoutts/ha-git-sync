@@ -135,7 +135,7 @@
 #    (Nabu Casa, Cloudflare Tunnel, or reverse proxy with TLS).
 - id: 'maintenance_git_pull_on_github_webhook'
   alias: '[Maintenance] Git Pull on GitHub Webhook'
-  description: "Tags: Maintenance, Git, Pull, Webhook — Pulls latest config from GitHub when notify-ha.yml fires. Skips if source is 'home-assistant' to prevent push→pull loops."
+  description: "Tags: Maintenance, Git, Pull, Webhook — Pulls latest config from GitHub when notify-ha.yml fires. Skips if webhook payload contains source == 'home-assistant' (set that value in any HA-originated webhook call to prevent push→pull loops)."
   trigger:
   - trigger: webhook
     webhook_id: !secret git_sync_webhook_id

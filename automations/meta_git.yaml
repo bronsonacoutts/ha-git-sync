@@ -93,7 +93,16 @@
   mode: single
 
 # Webhook-triggered pull: fired by notify-ha.yml GitHub Actions workflow
-# on every push/merge to main that did NOT originate from HA itself.
+# on every push/merge to main.
+#
+# LOOP PREVENTION
+# ---------------
+# The condition below skips the pull only when the webhook caller explicitly
+# sends `source: "home-assistant"` in the JSON payload. The notify-ha.yml
+# workflow always sends `source: "github-actions"`, so those pushes are
+# allowed through. If you configure HA to POST back to GitHub after a push,
+# set source to "home-assistant" in that call so this condition blocks the
+# redundant pull and prevents a push→webhook→pull→push loop.
 #
 # SECRETS REQUIRED
 # ----------------
@@ -109,7 +118,7 @@
 #    (Nabu Casa, Cloudflare Tunnel, or reverse proxy with TLS).
 - alias: "[Maintenance] Git Pull on GitHub Webhook"
   id: 'maintenance_git_pull_on_github_webhook'
-  description: "Tags: Maintenance, Git, Pull, Webhook — Pulls latest config from GitHub when notify-ha.yml fires. Skips if source is 'home-assistant' to prevent push→pull loops."
+  description: "Tags: Maintenance, Git, Pull, Webhook — Pulls latest config from GitHub when notify-ha.yml fires. Skips if webhook payload contains source == 'home-assistant' (set that value in any HA-originated webhook call to prevent push→pull loops)."
   trigger:
   - platform: webhook
     webhook_id: !secret git_sync_webhook_id
@@ -117,8 +126,8 @@
       - POST
     local_only: false
   condition:
-  # Block the pull only when HA itself originated the push (source == 'home-assistant').
-  # Pushes from GitHub Actions carry source == 'github-actions' and are allowed through.
+  # Skip the pull only when the caller sends source == 'home-assistant'.
+  # Calls from notify-ha.yml carry source == 'github-actions' and pass through.
   - condition: template
     value_template: "{{ trigger.json.source | default('') != 'home-assistant' }}"
   action:
