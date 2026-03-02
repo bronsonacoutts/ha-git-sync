@@ -19,6 +19,15 @@
 # NOTE: The webhook ID embedded in the URL acts as a shared secret.
 # Keep HA_WEBHOOK_URL confidential — do not log or echo it in workflow steps.
 #
+# LOOP PREVENTION
+# ---------------
+# This workflow always sends `{"source":"github-actions",...}` in the POST body.
+# The companion HA automation (maintenance_git_pull_on_github_webhook) can use
+# this `source` field to distinguish GitHub-originated events from other sources.
+# If you also configure Home Assistant to send webhooks back to GitHub, choose a
+# different `source` value there (for example, "home-assistant") and update that
+# automation's conditions accordingly to avoid creating pull/push loops.
+#
 # PERMISSIONS
 # -----------
 # This workflow uses only `contents: read` (the minimum required to check out

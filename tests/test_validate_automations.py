@@ -258,7 +258,7 @@ class TestExistingRepoFiles:
         example = root / "automations.yaml.example"
         if not example.exists():
             pytest.skip("automations.yaml.example not present")
-        data = yaml.safe_load(example.read_text(encoding="utf-8"))
+        data = yaml.load(example.read_text(encoding="utf-8"), Loader=va._HALoader)
         assert isinstance(data, list), "automations.yaml.example must be a YAML list"
         ids = [str(a.get("id", "")) for a in data if isinstance(a, dict)]
         missing = [i for i, a in enumerate(data) if not a.get("id")]

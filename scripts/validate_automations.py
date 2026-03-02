@@ -32,6 +32,20 @@ _UI_EDITABLE_PARENT_NAMES = {"automations"}
 _UI_EDITABLE_FILENAMES = {"automations.yaml"}
 
 
+class _HALoader(yaml.SafeLoader):
+    """SafeLoader subclass that understands Home Assistant-specific YAML tags.
+
+    Registers ``!secret`` as a plain-string passthrough so automation files
+    that reference ``secrets.yaml`` values can be parsed without errors.
+    """
+
+
+_HALoader.add_constructor(
+    "!secret",
+    lambda loader, node: loader.construct_scalar(node),
+)
+
+
 def is_ui_editable(file: Path, root: Path) -> bool:
     """Return True when *file* is in a HA UI-editable automation location."""
     try:
@@ -79,9 +93,9 @@ def validate_files(files: list[Path], root: Path) -> tuple[list[str], int]:
                 "the 'automations/' directory so they can be edited from the HA UI."
             )
 
-        # Parse YAML
+        # Parse YAML using the HA-aware loader that handles !secret tags.
         try:
-            data = yaml.safe_load(file.read_text(encoding="utf-8"))
+            data = yaml.load(file.read_text(encoding="utf-8"), Loader=_HALoader)
         except yaml.YAMLError as exc:
             errors.append(f"YAML ERROR: '{file}': {exc}")
             continue
