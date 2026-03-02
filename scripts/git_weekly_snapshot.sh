@@ -6,7 +6,7 @@ set -euo pipefail
 # creates an immutable annotated tag (snapshot/weekly-YYYY.WW) as a
 # permanent reference point for the weekly full snapshot.
 
-cd /config
+cd "${HA_CONFIG_DIR:-/config}"
 
 # Create backups directory if it doesn't exist
 mkdir -p backups
@@ -25,7 +25,7 @@ tar -czf "$SNAPFILE" \
     --exclude=".uuid" \
     ./
 
-/config/scripts/git_sync.sh "HA weekly snapshot ${SNAPTS}"
+/config/scripts/git_push.sh "HA weekly snapshot ${SNAPTS}"
 
 # Create a permanent, immutable annotated tag for this week's snapshot
 WEEK=$(date +"%G.%V")   # ISO 8601 year.week (avoids year-boundary ambiguity)

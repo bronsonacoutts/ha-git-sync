@@ -23,7 +23,7 @@ echo "[ha-git-sync] post-merge: merge completed successfully."
 # -- Optional: reload HA configuration (no downtime, applies most changes) ----
 # Requires the Home Assistant CLI (available inside the HA SSH addon).
 #
-# ha core reload
+ha core reload
 
 # -- Optional: full HA restart (required for integration/platform changes) ----
 # Requires the Home Assistant CLI.
