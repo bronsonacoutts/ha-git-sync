@@ -10,22 +10,6 @@ KEEP_DAYS="${1:-30}"
 
 cd /config
 
-ha_notify() {
-    local title="$1"
-    local message="$2"
-    local -a auth_args=()
-    if [[ -n "${SUPERVISOR_TOKEN:-}" ]]; then
-        auth_args=(-H "Authorization: Bearer ${SUPERVISOR_TOKEN}")
-    elif [[ -n "${HA_NOTIFY_TOKEN:-}" ]]; then
-        auth_args=(-H "Authorization: Bearer ${HA_NOTIFY_TOKEN}")
-    fi
-    curl -sf -X POST "http://localhost:8123/api/services/persistent_notification/create" \
-        "${auth_args[@]}" \
-        -H "Content-Type: application/json" \
-        -d "{\"title\":\"$title\",\"message\":\"$message\"}" \
-        || true
-}
-
 echo "Pruning backup/nightly-* tags older than ${KEEP_DAYS} days..."
 
 # Fetch tags from origin so the local list is current
@@ -47,4 +31,3 @@ while IFS= read -r tag; do
 done < <(git tag -l "backup/nightly-*" | sort)
 
 echo "Backup cleanup complete: ${deleted} tag(s) removed (kept last ${KEEP_DAYS} days)."
-ha_notify "Git Backup Cleanup" "Removed ${deleted} nightly backup tag(s) older than ${KEEP_DAYS} days."
