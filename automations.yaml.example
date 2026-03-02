@@ -1,6 +1,14 @@
-# automations.yaml — Git Sync Automations Snippet
+# automations.yaml — Git Sync Automations Snippet  (single-file approach)
 #
-# Append these entries to your existing /config/automations.yaml.
+# ALTERNATIVE: If your configuration.yaml already uses
+#   automation: !include_dir_merge_list automations/
+# then the automations in the automations/ directory are loaded directly and
+# you do NOT need this file.  See configuration.yaml.example for the
+# recommended setup.
+#
+# If instead you use a single root automations.yaml
+#   (automation: !include automations.yaml)
+# append these entries to your existing /config/automations.yaml.
 # IMPORTANT: every automation needs a unique id. The IDs below are safe
 # to use as-is; change them only if they clash with IDs already in your file.
 

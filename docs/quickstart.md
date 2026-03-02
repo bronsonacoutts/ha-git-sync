@@ -35,6 +35,31 @@ Use the examples in repository root:
 
 Merge them into your existing Home Assistant config (do not replace unrelated sections).
 
+## 4b) Migrate existing automations (first-time install only)
+
+If your existing `automations.yaml` or `automations/` files contain automations
+without an `id` field, Home Assistant cannot edit them from the UI after the sync
+is set up.  Run the migration script once to add stable, deterministic ids:
+
+```bash
+python3 scripts/migrate_automations.py /config
+```
+
+Or trigger it from the HA Developer Tools → Services after adding the
+shell command from `configuration.yaml.example`:
+
+```yaml
+service: shell_command.migrate_automations
+```
+
+The script is idempotent — automations that already have an id are not changed.
+Original files are backed up as `<filename>.bak` before any writes.
+After running, verify with:
+
+```bash
+python3 scripts/validate_automations.py /config
+```
+
 ## 5) Install local guardrails
 
 ```bash
