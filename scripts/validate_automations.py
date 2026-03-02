@@ -123,8 +123,9 @@ def validate_files(files: list[Path], root: Path) -> tuple[list[str], int]:
                 )
             else:
                 seen_ids[automation_id] = loc
+            total += 1
 
-    return errors
+    return errors, total
 
 
 def main() -> int:
@@ -138,7 +139,7 @@ def main() -> int:
         print("No automation files found. Nothing to validate.")
         return 0
 
-    errors = validate_files(files, root)
+    errors, total = validate_files(files, root)
 
     if errors:
         print(f"Automation validation FAILED ({len(errors)} error(s) found):\n")
@@ -150,9 +151,6 @@ def main() -> int:
         )
         return 1
 
-    total = sum(
-        len(yaml.safe_load(f.read_text(encoding="utf-8")) or []) for f in files
-    )
     print(
         f"Automation validation passed: {total} automation(s) in "
         f"{len(files)} file(s) — all have unique ids and are in UI-editable locations."

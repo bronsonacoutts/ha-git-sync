@@ -63,7 +63,7 @@ class TestValidateFilesPass:
               mode: single
         """)
         files = va.target_files(tmp_path)
-        errors = va.validate_files(files, tmp_path)
+        errors, _ = va.validate_files(files, tmp_path)
         assert errors == []
 
     def test_valid_multiple_automations(self, tmp_path):
@@ -82,7 +82,7 @@ class TestValidateFilesPass:
               mode: single
         """)
         files = va.target_files(tmp_path)
-        errors = va.validate_files(files, tmp_path)
+        errors, _ = va.validate_files(files, tmp_path)
         assert errors == []
 
     def test_valid_automation_in_automations_dir(self, tmp_path):
@@ -95,13 +95,13 @@ class TestValidateFilesPass:
               mode: single
         """)
         files = va.target_files(tmp_path)
-        errors = va.validate_files(files, tmp_path)
+        errors, _ = va.validate_files(files, tmp_path)
         assert errors == []
 
     def test_empty_file_passes(self, tmp_path):
         write_yaml(tmp_path, "automations.yaml", "")
         files = va.target_files(tmp_path)
-        errors = va.validate_files(files, tmp_path)
+        errors, _ = va.validate_files(files, tmp_path)
         assert errors == []
 
 
@@ -120,7 +120,7 @@ class TestValidateFilesFail:
               mode: single
         """)
         files = va.target_files(tmp_path)
-        errors = va.validate_files(files, tmp_path)
+        errors, _ = va.validate_files(files, tmp_path)
         assert len(errors) == 1
         assert "MISSING ID" in errors[0]
         assert "No id here" in errors[0]
@@ -135,7 +135,7 @@ class TestValidateFilesFail:
               mode: single
         """)
         files = va.target_files(tmp_path)
-        errors = va.validate_files(files, tmp_path)
+        errors, _ = va.validate_files(files, tmp_path)
         assert len(errors) == 1
         assert "MISSING ID" in errors[0]
 
@@ -155,7 +155,7 @@ class TestValidateFilesFail:
               mode: single
         """)
         files = va.target_files(tmp_path)
-        errors = va.validate_files(files, tmp_path)
+        errors, _ = va.validate_files(files, tmp_path)
         assert len(errors) == 1
         assert "DUPLICATE ID" in errors[0]
         assert "dup_id" in errors[0]
@@ -178,7 +178,7 @@ class TestValidateFilesFail:
               mode: single
         """)
         files = va.target_files(tmp_path)
-        errors = va.validate_files(files, tmp_path)
+        errors, _ = va.validate_files(files, tmp_path)
         assert len(errors) == 1
         assert "DUPLICATE ID" in errors[0]
 
@@ -196,7 +196,7 @@ class TestValidateFilesFail:
               mode: single
         """)
         files = va.target_files(tmp_path)
-        errors = va.validate_files(files, tmp_path)
+        errors, _ = va.validate_files(files, tmp_path)
         assert len(errors) == 2
         assert all("MISSING ID" in e for e in errors)
 
@@ -210,7 +210,7 @@ class TestValidateFilesFail:
               action: []
               mode: single
         """)
-        errors = va.validate_files([bad], tmp_path)
+        errors, _ = va.validate_files([bad], tmp_path)
         assert len(errors) == 1
         assert "PATH ERROR" in errors[0]
 
@@ -246,7 +246,7 @@ class TestExistingRepoFiles:
         meta = root / "automations" / "meta_git.yaml"
         if not meta.exists():
             pytest.skip("automations/meta_git.yaml not present")
-        errors = va.validate_files([meta], root)
+        errors, _ = va.validate_files([meta], root)
         # meta_git.yaml is outside the standard HA UI-editable paths by design;
         # we only care about id uniqueness and presence here.
         id_errors = [e for e in errors if "MISSING ID" in e or "DUPLICATE ID" in e]

@@ -32,3 +32,4 @@ shell_command:
   git_cleanup_backups: /bin/bash /config/scripts/git_cleanup_backups.sh
   install_git_hooks: /bin/bash /config/scripts/install_git_hooks.sh
   fix_automation_aliases: /bin/bash /config/scripts/fix_automation_aliases.sh
+  migrate_automations: /bin/bash /config/scripts/migrate_automations.sh
