@@ -108,11 +108,6 @@ The GitHub Actions webhook must reach your HA instance over the internet:
 - **Reverse proxy / port-forwarding**: Ensure TCP 443 is forwarded to HA and a valid TLS certificate is in place.
 - **No public access**: Use a self-hosted GitHub Actions runner inside your network instead of the default GitHub-hosted runner.
 
-## Optional script notification token
+## Optional post-merge REST token
 
-Shell scripts can send best-effort HA persistent notifications. For authenticated local API calls, expose one of:
-
-- `SUPERVISOR_TOKEN` (preferred when running in supervised/add-on context)
-- `HA_NOTIFY_TOKEN` (manual fallback bearer token)
-
-If neither is present, scripts continue without failing git operations.
+Default sync scripts do not call the HA REST notification endpoint. If you enable the optional REST API snippet in `hooks/post-merge`, provide `SUPERVISOR_TOKEN` (or another valid bearer token) through your environment and keep it out of tracked files.
