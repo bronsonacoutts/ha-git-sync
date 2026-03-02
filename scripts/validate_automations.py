@@ -59,10 +59,16 @@ def target_files(root: Path) -> list[Path]:
     return files
 
 
-def validate_files(files: list[Path], root: Path) -> list[str]:
-    """Validate a list of YAML files; return a list of error strings."""
+def validate_files(files: list[Path], root: Path) -> tuple[list[str], int]:
+    """Validate a list of YAML files.
+
+    Returns ``(errors, total_automation_count)`` where *errors* is a list of
+    error strings and *total_automation_count* is the number of automation
+    entries found across all files (used for the success summary).
+    """
     errors: list[str] = []
     seen_ids: dict[str, str] = {}  # id -> "file:index" for duplicate reporting
+    total = 0
 
     for file in files:
         # Check UI-editable path

@@ -1,7 +1,11 @@
 # Maintenance / Git-related automations
-# NOTE: This file is NOT loaded by Home Assistant. It is a reference copy.
-# The live automations are in /automations.yaml (root).
-# See automations/README.md for details.
+# Loaded by Home Assistant via: automation: !include_dir_merge_list automations/
+# See configuration.yaml.example for the required configuration.yaml entry.
+#
+# Each automation has a stable, unique id so it remains editable from the
+# Home Assistant UI and can also be edited directly in this file on GitHub.
+# Do not remove or change the id values — HA uses them to track automations
+# across restarts and UI edits.
 
 - alias: "[Maintenance] Reload Automations After Git Sync"
   id: '1767772677262'

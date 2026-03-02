@@ -1,14 +1,11 @@
 #!/usr/bin/env python3
 """Tests for scripts/validate_automations.py."""
 
-import sys
 import textwrap
 from pathlib import Path
 
 import pytest
 import yaml
-
-sys.path.insert(0, str(Path(__file__).parent.parent / "scripts"))
 import validate_automations as va  # noqa: E402
 
 

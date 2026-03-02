@@ -185,7 +185,7 @@ It syncs tracked files and may merge remote changes; review diffs and use PR che
 Yes, private repositories are supported and recommended.
 
 **Does this work with UI-managed Home Assistant changes?**  
-Yes; UI changes are written to files under `/config`, then picked up by sync jobs.
+Yes, with two requirements: (1) your `configuration.yaml` must include `automation: !include_dir_merge_list automations/` (see `configuration.yaml.example`) so HA loads and writes back to the same files that are tracked in Git, and (2) every automation must have a unique `id` field — without one, HA cannot identify the automation in its registry and will refuse to show it in the UI editor.  See [Automation ID policy](#automation-id-policy) for details.
 
 **Can I run this for multiple HA instances?**  
 Yes, but keep one repo/branch strategy per instance to avoid accidental cross-overwrites.

@@ -1,7 +1,26 @@
-# configuration.yaml — Git Sync Shell Command Snippet
+# configuration.yaml — Git Sync Snippet
 #
-# Add this block to your existing /config/configuration.yaml.
-# If you already have a shell_command: block, add the keys inside it
+# Add these blocks to your existing /config/configuration.yaml.
+#
+# AUTOMATION BLOCK
+# ----------------
+# If you do NOT already have an `automation:` key, add this line as-is.
+# It tells Home Assistant to load every .yaml file in the automations/
+# directory as the live automation list.  This is what makes automations
+# editable from both the HA UI and GitHub — HA reads from (and writes back
+# to) the same files that are tracked in Git.
+#
+# If you already have `automation: !include automations.yaml`, replace that
+# line with the one below so that the automations/ directory is the
+# authoritative source.
+#
+# Do NOT define `automation:` twice.
+
+automation: !include_dir_merge_list automations/
+
+# SHELL COMMAND BLOCK
+# -------------------
+# If you already have a shell_command: block, add only the keys inside it
 # (do NOT create a second shell_command: block).
 
 shell_command:
