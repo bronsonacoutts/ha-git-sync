@@ -95,13 +95,16 @@ def migrate_file(file: Path) -> tuple[int, list[tuple[str, str]]]:
     used_ids = set(existing_ids)  # grows as we assign new ids
     added = 0
 
-    for item in data:
+    for idx, item in enumerate(data):
         if not isinstance(item, dict):
             continue
         if item.get("id"):
             continue  # already has an id — leave it alone
 
-        alias = str(item.get("alias") or "").strip() or f"automation_{id(item)}"
+        # Use the explicit alias if present; otherwise fall back to a
+        # deterministic synthetic alias based on file path and index.
+        alias_str = str(item.get("alias") or "").strip()
+        alias = alias_str or f"{file}:{idx}"
         new_id = generate_id(alias, used_ids)
         item["id"] = new_id
         used_ids.add(new_id)
