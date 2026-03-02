@@ -25,6 +25,7 @@ tar -czf "$SNAPFILE" \
     --exclude=".uuid" \
     ./
 
+/config/scripts/git_pull.sh
 /config/scripts/git_push.sh "HA weekly snapshot ${SNAPTS}"
 
 # Create a permanent, immutable annotated tag for this week's snapshot
