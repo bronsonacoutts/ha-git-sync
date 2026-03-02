@@ -5,7 +5,7 @@ Checks performed on all automation YAML files found under the given root:
   1. Every automation must have an 'id' field.
   2. No two automations may share the same id (duplicate detection).
   3. Automation files must be stored in a HA UI-editable location:
-       <root>/automations.yaml  OR  <root>/automations/*.yaml
+        <root>/automations.yaml  OR  <root>/automations/*.yaml  OR  <root>/automations/*.yml
 
 Usage:
   python3 scripts/validate_automations.py [directory]   # default: cwd

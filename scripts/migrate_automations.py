@@ -70,12 +70,17 @@ def target_files(root: Path) -> list[Path]:
     return files
 
 
-def migrate_file(file: Path) -> tuple[int, list[tuple[str, str]]]:
+def migrate_file(file: Path, used_ids: set[str]) -> tuple[int, list[tuple[str, str]]]:
     """Add missing ids to automations in *file*.
+
+    *used_ids* is a shared set of already-allocated ids (both pre-existing
+    across all files and newly assigned ones from prior calls).  It is
+    updated in place as new ids are generated, preventing cross-file id
+    collisions.
 
     Returns ``(added, duplicates)`` where *added* is the number of ids
     inserted and *duplicates* is a list of ``(id, alias)`` pairs for ids
-    that appear more than once (not auto-fixed).
+    that appear more than once within this file (not auto-fixed).
     """
     try:
         data = yaml.safe_load(file.read_text(encoding="utf-8"))
@@ -86,13 +91,6 @@ def migrate_file(file: Path) -> tuple[int, list[tuple[str, str]]]:
     if not isinstance(data, list):
         return 0, []
 
-    # First pass: collect all ids that are already present.
-    existing_ids: set = set()
-    for item in data:
-        if isinstance(item, dict) and item.get("id"):
-            existing_ids.add(str(item["id"]))
-
-    used_ids = set(existing_ids)  # grows as we assign new ids
     added = 0
 
     for idx, item in enumerate(data):
@@ -107,10 +105,10 @@ def migrate_file(file: Path) -> tuple[int, list[tuple[str, str]]]:
         alias = alias_str or f"{file}:{idx}"
         new_id = generate_id(alias, used_ids)
         item["id"] = new_id
-        used_ids.add(new_id)
+        used_ids.add(new_id)  # prevent subsequent calls from reusing this id
         added += 1
 
-    # Second pass: detect duplicates (could pre-exist or, rarely, collide).
+    # Within-file duplicate detection (covers pre-existing intra-file duplicates).
     seen: dict = {}
     duplicates = []
     for item in data:
@@ -145,15 +143,44 @@ def main() -> int:
         print("No automation files found. Nothing to migrate.")
         return 0
 
-    total_added = 0
-    all_duplicates = []
+    # First pass: collect ALL pre-existing ids across every file into a single
+    # shared set, and detect any cross-file pre-existing duplicates.
+    # used_ids is passed into migrate_file() so newly generated ids never
+    # collide with existing ones or with ids assigned to other files.
+    used_ids: set[str] = set()
+    # all_duplicates collects (fpath, id, alias) tuples in two stages:
+    #   1. Cross-file pre-existing duplicates found during this first pass.
+    #   2. Intra-file pre-existing duplicates returned by migrate_file().
+    all_duplicates: list[tuple] = []
 
     for file in files:
-        added, duplicates = migrate_file(file)
+        try:
+            data = yaml.safe_load(file.read_text(encoding="utf-8"))
+        except yaml.YAMLError:
+            continue
+        if not isinstance(data, list):
+            continue
+        seen_in_pass: set[str] = set()  # tracks first occurrence within this pass
+        for idx, item in enumerate(data):
+            if not isinstance(item, dict) or not item.get("id"):
+                continue
+            aid = str(item["id"])
+            alias = str(item.get("alias", "<no alias>"))
+            if aid in used_ids and aid not in seen_in_pass:
+                # id already seen in an earlier file — cross-file duplicate
+                all_duplicates.append((file.relative_to(root), aid, alias))
+            seen_in_pass.add(aid)
+            used_ids.add(aid)
+
+    # Second pass: migrate each file using the shared used_ids set so that
+    # newly generated ids are guaranteed unique across all files.
+    total_added = 0
+    for file in files:
+        added, file_dupes = migrate_file(file, used_ids)
         if added:
             print(f"  {file.relative_to(root)}: added {added} id(s)")
         all_duplicates.extend(
-            (file.relative_to(root), aid, alias) for aid, alias in duplicates
+            (file.relative_to(root), aid, alias) for aid, alias in file_dupes
         )
         total_added += added
 
