@@ -79,9 +79,15 @@ def validate_files(files: list[Path], root: Path) -> tuple[list[str], int]:
                 "the 'automations/' directory so they can be edited from the HA UI."
             )
 
-        # Parse YAML
+        # Parse YAML (register !secret as a plain-string constructor so the
+        # validator can parse files that reference HA secrets.yaml values).
         try:
-            data = yaml.safe_load(file.read_text(encoding="utf-8"))
+            loader = yaml.SafeLoader
+            loader.add_constructor(
+                "!secret",
+                lambda ldr, node: ldr.construct_scalar(node),
+            )
+            data = yaml.load(file.read_text(encoding="utf-8"), Loader=loader)
         except yaml.YAMLError as exc:
             errors.append(f"YAML ERROR: '{file}': {exc}")
             continue

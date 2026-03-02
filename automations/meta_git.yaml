@@ -91,3 +91,36 @@
   action:
   - action: shell_command.git_weekly_snapshot
   mode: single
+
+# Webhook-triggered pull: fired by notify-ha.yml GitHub Actions workflow
+# on every push/merge to main that did NOT originate from HA itself.
+#
+# SECRETS REQUIRED
+# ----------------
+# 1. Add to /config/secrets.yaml:
+#      git_sync_webhook_id: "your-unique-webhook-id-here"
+#    Generate a strong value:
+#      python3 -c "import secrets; print(secrets.token_urlsafe(32))"
+#
+# 2. Add HA_WEBHOOK_URL as a GitHub Actions secret in your repo settings:
+#      https://<your-ha-url>/api/webhook/<git_sync_webhook_id>
+#
+# 3. Ensure your HA instance is reachable from the internet
+#    (Nabu Casa, Cloudflare Tunnel, or reverse proxy with TLS).
+- alias: "[Maintenance] Git Pull on GitHub Webhook"
+  id: 'maintenance_git_pull_on_github_webhook'
+  description: "Tags: Maintenance, Git, Pull, Webhook — Pulls latest config from GitHub when notify-ha.yml fires. Skips if source is 'home-assistant' to prevent push→pull loops."
+  trigger:
+  - platform: webhook
+    webhook_id: !secret git_sync_webhook_id
+    allowed_methods:
+      - POST
+    local_only: false
+  condition:
+  # Block the pull only when HA itself originated the push (source == 'home-assistant').
+  # Pushes from GitHub Actions carry source == 'github-actions' and are allowed through.
+  - condition: template
+    value_template: "{{ trigger.json.source | default('') != 'home-assistant' }}"
+  action:
+  - action: shell_command.git_pull
+  mode: single
