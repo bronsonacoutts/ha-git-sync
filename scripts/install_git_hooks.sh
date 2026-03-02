@@ -21,10 +21,12 @@ GIT_HOOKS_DIR="${REPO_ROOT}/.git/hooks"
 
 ha_notify() {
     # Use SUPERVISOR_TOKEN when available (running inside HA/supervisor context).
-    # Falls back to unauthenticated call which works when HA trusts localhost.
+    # Falls back to HA_NOTIFY_TOKEN for non-supervised environments.
     local -a auth_args=()
     if [[ -n "${SUPERVISOR_TOKEN:-}" ]]; then
         auth_args=(-H "Authorization: Bearer ${SUPERVISOR_TOKEN}")
+    elif [[ -n "${HA_NOTIFY_TOKEN:-}" ]]; then
+        auth_args=(-H "Authorization: Bearer ${HA_NOTIFY_TOKEN}")
     fi
     curl -sf -X POST "http://localhost:8123/api/services/persistent_notification/create" \
         "${auth_args[@]}" \

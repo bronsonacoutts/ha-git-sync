@@ -18,6 +18,7 @@ Home Assistant config changes are easy to lose track of when edits happen from m
 ## Key features
 
 - **Bi-directional sync model:** pull from GitHub and push local HA updates.
+- **Local-wins conflict policy:** sync scripts use `git merge -X ours`, meaning **local HA `/config` edits always win** on line-level conflicts. Non-conflicting upstream changes merge cleanly. See [Conflict policy](#conflict-policy-important) for details.
 - **GitHub Actions automation:** optional update PRs and automation alias correction.
 - **Security guardrails:** hooks, safe defaults, and documented token/secret handling.
 - **Template-based onboarding:** ready-to-merge examples for existing HA instances.
@@ -49,7 +50,7 @@ How to read this: local HA changes and repo changes converge through sync jobs; 
    - Follow [docs/git-setup.md](docs/git-setup.md).
    - Keep credentials in secure HA secrets paths; never hardcode in tracked files.
 4. **Enable workflows**
-   - Optional upstream sync (`.github/workflows/upstream-sync.yml`): create `.github/upstream-sync.enabled`.
+   - Optional upstream sync (`.github/workflows/upstream-sync-pr.yml`): create `.github/upstream-sync.enabled`.
    - Optional alias autocorrect: create `.github/automation-alias-autocorrect.enabled`.
 5. **Run first sync safely**
    - Run `scripts/git_status.sh`, then `scripts/git_sync.sh` from `/config`.
