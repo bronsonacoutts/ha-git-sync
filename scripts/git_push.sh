@@ -30,7 +30,14 @@ REPO_DIR="${HA_CONFIG_DIR:-/config}"
 GIT_BRANCH="${GIT_BRANCH:-main}"
 GIT_USER_NAME="${GIT_USER_NAME:-ha-git-sync}"
 GIT_USER_EMAIL="${GIT_USER_EMAIL:-ha-git-sync@localhost}"
-COMMIT_MSG="${1:-HA config: sync from HA $(date -u '+%Y-%m-%dT%H:%M:%SZ')}"
+RAW_COMMIT_MSG="${1-}"
+if [ -z "$RAW_COMMIT_MSG" ]; then
+    COMMIT_MSG="HA config: sync from HA $(date -u '+%Y-%m-%dT%H:%M:%SZ')"
+elif [[ "$RAW_COMMIT_MSG" == HA\ * ]]; then
+    COMMIT_MSG="$RAW_COMMIT_MSG"
+else
+    COMMIT_MSG="HA $RAW_COMMIT_MSG"
+fi
 
 cd "$REPO_DIR"
 export HA_GIT_AUTOMATED=1
