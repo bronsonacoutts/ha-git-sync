@@ -1,0 +1,45 @@
+Home Assistant shows "This automation cannot be edited from the UI" when automations lack a stable `id` or aren't loaded from a UI-editable path. This PR enforces correct id hygiene and wires up the missing configuration so HA actually loads the tracked automation files.
+
+## Root cause fix
+
+`configuration.yaml.example` had no `automation:` block, so HA never loaded `automations/meta_git.yaml`. The file itself carried a "NOT loaded by Home Assistant" comment, cementing the gap. Added the missing include directive:
+
+```yaml
+automation: !include_dir_merge_list automations/
+```
+
+With this in place, HA reads from and writes UI edits back to the same files tracked in Git — enabling true bidirectional editing.
+
+## Validation (`scripts/validate_automations.py`)
+
+New script that fails CI on:
+- Any automation missing an `id` field
+- Duplicate `id` values across all scanned files
+- Automation files outside the UI-editable paths (`automations.yaml` or `automations/*.yaml`)
+
+Integrated as a `CI / validate-automations` job (shellcheck + yamllint peer).
+
+## Retrospective migration (`scripts/migrate_automations.py`)
+
+One-time script for users installing onto an existing HA instance with id-less automations:
+- Generates stable, **deterministic** 13-digit ids via SHA-256 of the automation alias — same input always produces the same id across runs
+- Idempotent: automations with existing ids are untouched
+- Backs up originals as `<filename>.bak` before writing
+- Reports (but does not auto-fix) duplicate ids, requiring explicit user resolution
+
+```bash
+python3 scripts/migrate_automations.py /config
+python3 scripts/validate_automations.py /config   # confirm clean
+bash scripts/git_sync.sh
+```
+
+Also exposed as `shell_command.migrate_automations` for triggering from HA Developer Tools.
+
+## Supporting changes
+
+- `automations/meta_git.yaml` — removed stale "NOT loaded by HA" comment
+- `automations.yaml.example` — reframed as the single-file alternative to `include_dir_merge_list`
+- `configuration.yaml.example` — adds `migrate_automations` shell_command alongside existing entries
+- `docs/quickstart.md` — new step 4b for first-time install migration
+- `README.md` — new *Automation ID policy* section; updated FAQ, branch protection recommendations, and Quick Start to reference `CI / validate-automations`
+- 39 pytest tests covering id determinism, idempotency, collision avoidance, duplicate detection, UI-editable path checks, and regression against live repo files
