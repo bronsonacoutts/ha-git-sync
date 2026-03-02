@@ -247,8 +247,8 @@ class TestExistingRepoFiles:
         if not meta.exists():
             pytest.skip("automations/meta_git.yaml not present")
         errors, _ = va.validate_files([meta], root)
-        # meta_git.yaml is outside the standard HA UI-editable paths by design;
-        # we only care about id uniqueness and presence here.
+        # For meta_git.yaml we only enforce that all automations have unique, non-empty ids.
+        # Any other validation issues are ignored in this regression test.
         id_errors = [e for e in errors if "MISSING ID" in e or "DUPLICATE ID" in e]
         assert id_errors == [], id_errors
 
