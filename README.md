@@ -55,7 +55,7 @@ How to read this: local HA changes and repo changes converge through sync jobs; 
 5. **Run first sync safely**
    - Run `scripts/git_status.sh`, then `scripts/git_sync.sh` from `/config`.
 6. **Verify checks pass**
-   - In GitHub, confirm `CI / shellcheck`, `CI / yamllint`, and `CodeQL` are green.
+   - In GitHub, confirm `CI / shellcheck`, `CI / yamllint`, `CI / validate-automations`, and `CodeQL` are green.
 
 > [!TIP]
 > Start in a private test repository first, then mirror settings into production.
@@ -95,7 +95,7 @@ Recommended protections for `main`:
 
 - Require pull request before merge.
 - Require at least one review (or maintainer self-review policy).
-- Require status checks: `CI / shellcheck`, `CI / yamllint`, `CodeQL`.
+- Require status checks: `CI / shellcheck`, `CI / yamllint`, `CI / validate-automations`, `CodeQL`.
 - Block force pushes and branch deletion.
 - Enable Dependabot alerts, secret scanning, and push protection.
 
@@ -107,6 +107,34 @@ Recommended protections for `main`:
 - **Safe rollback:** identify known-good commit/tag, checkout in a staging copy, validate HA startup, then apply.
 
 Full runbook: [docs/operations.md](docs/operations.md)
+
+## Automation ID policy
+
+Every Home Assistant automation managed by this project **must** have a stable, unique `id` field.  Without an `id`, Home Assistant cannot identify the automation in its registry and will show:
+
+> *"This automation cannot be edited from the UI, because it is not stored in the automations.yaml file, or doesn't have an ID."*
+
+Rules enforced by `scripts/validate_automations.py` and the `CI / validate-automations` check:
+
+| Rule | What it checks |
+|------|----------------|
+| **ID present** | Every automation in `automations.yaml` or `automations/*.yaml` must have an `id` field that is non-empty. |
+| **ID unique** | No two automations across all scanned files may share the same `id`. |
+| **UI-editable path** | Automation files must be in `automations.yaml` or the `automations/` directory — the locations HA uses for UI-managed automations. |
+
+### ID format recommendation
+
+Use a 13-digit Unix millisecond timestamp as the id (e.g. `'1767772677262'`).  This is deterministic once chosen, is unique in practice, and matches the format HA itself generates.  Never use random UUIDs that change on every generation; ids must remain stable across sync runs.
+
+### Running validation locally
+
+```bash
+python3 scripts/validate_automations.py          # validate cwd
+python3 scripts/validate_automations.py /config  # validate a deployed HA config
+python3 -m pytest tests/                         # run all tests
+```
+
+A non-zero exit code means one or more automations fail the checks; the output includes actionable error messages.
 
 ## Conflict policy (important)
 
