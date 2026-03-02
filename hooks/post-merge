@@ -9,21 +9,21 @@
 #     chmod +x /config/.git/hooks/post-merge
 #
 # What it does:
-#   Prints a confirmation that the merge completed. Optionally, uncomment one
-#   of the HA reload/restart commands below to automatically apply config
-#   changes after every pull.
-#
-# NOTE: Restarting HA automatically after every pull is convenient but carries
-# risk. Review incoming changes before enabling auto-restart in production.
+#   After every successful merge, reloads the Home Assistant configuration
+#   (if the `ha` CLI is available) to apply incoming changes without a restart.
+#   On systems without the `ha` CLI the reload is skipped gracefully.
 
 set -euo pipefail
 
 echo "[ha-git-sync] post-merge: merge completed successfully."
 
-# -- Optional: reload HA configuration (no downtime, applies most changes) ----
+# Reload HA configuration (no downtime, applies most changes).
 # Requires the Home Assistant CLI (available inside the HA SSH addon).
-#
-# ha core reload
+if command -v ha >/dev/null 2>&1; then
+    ha core reload
+else
+    echo "[ha-git-sync] post-merge: 'ha' CLI not found — skipping reload."
+fi
 
 # -- Optional: full HA restart (required for integration/platform changes) ----
 # Requires the Home Assistant CLI.

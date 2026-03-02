@@ -7,9 +7,51 @@
 # Do not remove or change the id values — HA uses them to track automations
 # across restarts and UI edits.
 
+- alias: "[Maintenance] Git Pull on GitHub Webhook"
+  id: 'maintenance_git_pull_on_github_webhook'
+  description: "Pulls latest config from GitHub when notify-ha.yml fires. Source must be github-actions."
+  trigger:
+  - platform: webhook
+    webhook_id: !secret git_sync_webhook_id
+    allowed_methods:
+      - POST
+    local_only: false
+  condition:
+  - condition: template
+    value_template: "{{ trigger.json.source | default('') == 'github-actions' }}"
+  action:
+  - action: shell_command.git_pull
+    response_variable: pull_result
+  - choose:
+    - conditions:
+      - condition: template
+        value_template: "{{ pull_result.return_code == 0 }}"
+      sequence:
+      - action: persistent_notification.create
+        data:
+          title: "✅ Git Sync"
+          message: "Config pulled from GitHub successfully ({{ trigger.json.sha[:7] | default('unknown') }})."
+    default:
+    - action: persistent_notification.create
+      data:
+        title: "❌ Git Sync Failed"
+        message: "Git pull failed (exit {{ pull_result.return_code }}). Check HA logs."
+  mode: single
+
+- alias: "[Maintenance] Push Git Config After UI Changes"
+  id: '1767773315131'
+  description: "Debounced push whenever the Lovelace dashboard is saved. 3 min quiet-window."
+  trigger:
+  - platform: event
+    event_type: lovelace_updated
+  condition: []
+  action:
+  - action: script.maintenance_git_push_config
+  mode: single
+
 - alias: "[Maintenance] Reload Automations After Git Sync"
   id: '1767772677262'
-  description: "Tags: [Domain: Maintenance, Trigger: Git Sync Complete, Action: Reload Automations]"
+  description: "Reload automations after the git sync script (pull + push) completes."
   trigger:
   - platform: state
     entity_id: script.maintenance_git_sync_config
@@ -21,66 +63,35 @@
     data: {}
   mode: single
 
-- alias: "[Maintenance] Git Sync Hourly"
-  id: '1767772690727'
-  description: "Tags: Maintenance, Git, Sync, Schedule"
-  trigger:
-  - platform: time_pattern
-    hours: "*"
-    minutes: 0
-  condition: []
-  action:
-  - target:
-      entity_id: script.maintenance_git_sync_config
-    action: script.turn_on
-  mode: single
-
-- alias: "[Maintenance] Push Git Config After UI Changes (lovelace_updated)"
-  id: '1767773315131'
-  description: "Tags: Maintenance, Git, Push, UI"
-  trigger:
-  - platform: event
-    event_type: lovelace_updated
-  condition: []
-  action:
-  - target:
-      entity_id: script.maintenance_git_push_config
-    action: script.turn_on
-  mode: single
-
-- alias: "[Maintenance] Git Sync Before Major Changes"
-  id: '1772117850001'
-  description: "Tags: Maintenance, Git, Sync, Pre-Edit"
-  trigger:
-  - platform: state
-    entity_id: input_boolean.maintenance_major_changes
-    to: "on"
-  condition: []
-  action:
-  - target:
-      entity_id: script.maintenance_git_sync_config
-    action: script.turn_on
-  - action: notify.persistent_notification
-    data:
-      message: "Git Sync triggered before major changes"
-  mode: single
-
-# Nightly backup of /config to GitHub
 - alias: "[Maintenance] Nightly Config Backup"
   id: '1772117850002'
-  description: "Tags: Maintenance, Git, Backup, Schedule"
+  description: "Commit and tag nightly backup at 03:00."
   trigger:
   - platform: time
     at: "03:00:00"
   condition: []
   action:
   - action: shell_command.git_nightly_backup
+    response_variable: backup_result
+  - choose:
+    - conditions:
+      - condition: template
+        value_template: "{{ backup_result.return_code == 0 }}"
+      sequence:
+      - action: persistent_notification.create
+        data:
+          title: "✅ Nightly Backup"
+          message: "Nightly config backup completed."
+    default:
+    - action: persistent_notification.create
+      data:
+        title: "❌ Nightly Backup Failed"
+        message: "Nightly backup failed (exit {{ backup_result.return_code }}). Check HA logs."
   mode: single
 
-# Weekly full config snapshot (tar.gz) committed to repo
 - alias: "[Maintenance] Weekly Config Snapshot"
   id: '1772117850003'
-  description: "Tags: Maintenance, Git, Snapshot, Schedule"
+  description: "Create tar.gz snapshot every Sunday at 02:30."
   trigger:
   - platform: time
     at: "02:30:00"
@@ -90,4 +101,32 @@
     - sun
   action:
   - action: shell_command.git_weekly_snapshot
+    response_variable: snap_result
+  - choose:
+    - conditions:
+      - condition: template
+        value_template: "{{ snap_result.return_code == 0 }}"
+      sequence:
+      - action: persistent_notification.create
+        data:
+          title: "✅ Weekly Snapshot"
+          message: "Weekly config snapshot completed."
+    default:
+    - action: persistent_notification.create
+      data:
+        title: "❌ Weekly Snapshot Failed"
+        message: "Weekly snapshot failed (exit {{ snap_result.return_code }}). Check HA logs."
+  mode: single
+
+- alias: "[Maintenance] Monthly Backup Tag Cleanup"
+  id: '1772117850004'
+  description: "Prune backup/nightly-* tags older than 30 days on the 1st of each month."
+  trigger:
+  - platform: time
+    at: "04:00:00"
+  condition:
+  - condition: template
+    value_template: "{{ now().day == 1 }}"
+  action:
+  - action: shell_command.git_cleanup_backups
   mode: single

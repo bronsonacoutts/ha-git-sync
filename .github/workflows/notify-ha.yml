@@ -36,13 +36,32 @@ jobs:
   notify-ha:
     name: Send webhook to Home Assistant
     runs-on: ubuntu-latest
+    # Skip if this push came from HA itself (commit message starts with "HA ")
+    if: ${{ !startsWith(github.event.head_commit.message, 'HA ') }}
     permissions:
       contents: read
     steps:
       - name: POST webhook to Home Assistant
         run: |
-          curl --fail --silent --show-error \
+          HTTP_STATUS=$(curl --silent --output /dev/null --write-out "%{http_code}" \
             --request POST \
             --header "Content-Type: application/json" \
             --data '{"source":"github-actions","ref":"${{ github.ref_name }}","sha":"${{ github.sha }}"}' \
-            "${{ secrets.HA_WEBHOOK_URL }}"
+            "${{ secrets.HA_WEBHOOK_URL }}")
+          echo "HA webhook response: $HTTP_STATUS"
+          if [[ "$HTTP_STATUS" -lt 200 || "$HTTP_STATUS" -ge 300 ]]; then
+            echo "::error::Webhook delivery failed (HTTP $HTTP_STATUS)"
+            exit 1
+          fi
+          echo "::notice::Webhook delivered successfully (HTTP $HTTP_STATUS)"
+
+      - name: Summary
+        if: always()
+        run: |
+          if [ "${{ job.status }}" = "success" ]; then
+            echo "## ✅ HA Webhook Delivered" >> $GITHUB_STEP_SUMMARY
+            echo "Triggered pull on Home Assistant for commit \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "## ❌ HA Webhook Failed" >> $GITHUB_STEP_SUMMARY
+            echo "Could not deliver webhook for commit \`${{ github.sha }}\`. Check \`HA_WEBHOOK_URL\` secret." >> $GITHUB_STEP_SUMMARY
+          fi

@@ -2,16 +2,10 @@
 set -euo pipefail
 
 # install_git_hooks.sh
-# One-command installer for git hooks and pre-commit on any machine
-# (developer laptop or the HASS box at /config).
+# Installs the commit-msg and pre-push git hooks.
 #
 # Usage:
 #   /config/scripts/install_git_hooks.sh
-#
-# What it installs:
-#   1. pre-commit framework hooks (yamllint, alias-lint, validate-automations, etc.)
-#   2. commit-msg hook — enforces commit message format
-#   3. pre-push hook   — blocks accidental direct pushes to main
 #
 # Safe to re-run: existing hooks are backed up to <hook>.bak before replacing.
 
@@ -21,28 +15,6 @@ GIT_HOOKS_DIR="${REPO_ROOT}/.git/hooks"
 
 echo "==> Installing git hooks for: ${REPO_ROOT}"
 
-# ── 1. Install pre-commit framework ──────────────────────────────────────────
-if command -v pre-commit >/dev/null 2>&1; then
-    echo "pre-commit already installed: $(pre-commit --version)"
-else
-    echo "Installing pre-commit..."
-    if command -v pip3 >/dev/null 2>&1; then
-        pip3 install --quiet pre-commit
-    elif command -v pip >/dev/null 2>&1; then
-        pip install --quiet pre-commit
-    else
-        echo "⚠️  pip not found — skipping pre-commit install. Install it manually: pip install pre-commit" >&2
-    fi
-fi
-
-if command -v pre-commit >/dev/null 2>&1; then
-    echo "Activating pre-commit hooks..."
-    cd "$REPO_ROOT"
-    pre-commit install --install-hooks
-    echo "✅  pre-commit hooks installed."
-fi
-
-# ── 2. Install custom git hook scripts ───────────────────────────────────────
 install_hook() {
     local name="$1"
     local src="${HOOKS_SRC}/${name}"
@@ -67,4 +39,4 @@ install_hook "commit-msg"
 install_hook "pre-push"
 
 echo ""
-echo "==> All git hooks installed. Your commits will now be validated automatically."
+echo "==> Git hooks installed."
