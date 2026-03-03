@@ -1,4 +1,14 @@
-$OWNER = "bronsonacoutts"
+$OWNER = $env:GH_OWNER
+if (-not $OWNER) {
+    $originUrl = git remote get-url origin 2>$null
+    if ($LASTEXITCODE -eq 0 -and $originUrl -match '[:/](?<owner>[^/]+)/(?<repo>[^/\.]+)(?:\.git)?$') {
+        $OWNER = $Matches['owner']
+    }
+}
+if (-not $OWNER) {
+    # Fallback to upstream owner if environment and git remote are unavailable.
+    $OWNER = "bronsonacoutts"
+}
 $REPO  = "ha-git-sync"
 $GH_TOKEN = $env:GH_TOKEN
 
