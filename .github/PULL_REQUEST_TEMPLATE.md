@@ -12,6 +12,7 @@ Describe what changed and why.
 ## Validation
 
 - [ ] I ran relevant scripts/workflows locally or in CI.
+- [ ] For shell script changes, I ran `shellcheck`; for YAML changes, I ran `yamllint` (locally or in CI).
 - [ ] I verified no secrets were introduced.
 - [ ] I verified core sync behavior is unchanged unless this is an explicit bug fix.
 
