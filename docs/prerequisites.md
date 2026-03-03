@@ -58,16 +58,16 @@ deploy key or a dedicated SSH key without a passphrase.
    Host github.com
        IdentityFile /root/.ssh/ha_git_sync_ed25519
        IdentitiesOnly yes
-         StrictHostKeyChecking yes
-         UserKnownHostsFile /root/.ssh/known_hosts
+      StrictHostKeyChecking yes
+      UserKnownHostsFile /root/.ssh/known_hosts
    ```
 
-      Then seed known hosts:
+    Then seed known hosts:
 
-      ```bash
-      ssh-keyscan -t ed25519 github.com >> /root/.ssh/known_hosts
-      chmod 644 /root/.ssh/known_hosts
-      ```
+    ```bash
+    ssh-keyscan -t ed25519 github.com >> /root/.ssh/known_hosts
+    chmod 644 /root/.ssh/known_hosts
+    ```
 
 4. **Test the connection**:
 
@@ -108,6 +108,11 @@ The GitHub Actions webhook must reach your HA instance over the internet:
 - **Reverse proxy / port-forwarding**: Ensure TCP 443 is forwarded to HA and a valid TLS certificate is in place.
 - **No public access**: Use a self-hosted GitHub Actions runner inside your network instead of the default GitHub-hosted runner.
 
-## Optional post-merge REST token
+## Optional script notification token
 
-Default sync scripts do not call the HA REST notification endpoint. If you enable the optional REST API snippet in `hooks/post-merge`, provide `SUPERVISOR_TOKEN` (or another valid bearer token) through your environment and keep it out of tracked files.
+Shell scripts can send best-effort HA persistent notifications. For authenticated local API calls, expose one of:
+
+- `SUPERVISOR_TOKEN` (preferred when running in supervised/add-on context)
+- `HA_NOTIFY_TOKEN` (manual fallback bearer token)
+
+If neither is present, scripts continue without failing git operations.
