@@ -39,4 +39,7 @@ Thumbs.db
 
 # Local repo-audit helper script
 scripts/check-repo-config.sh
+
+# Local GitHub API vars helper (copy api-vars.ps1.example → api-vars.ps1 and adapt)
+api-vars.ps1
 _private/forum-post.md
