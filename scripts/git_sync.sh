@@ -6,6 +6,24 @@ set -euo pipefail
 # Auto-recovers from common transient errors (stale lock, rejected push).
 
 commit_message="${1:-HA config sync $(date -Iseconds)}"
+HA_NOTIFY_URL="http://localhost:8123/api/services/persistent_notification/create"
+
+# Send a persistent notification to Home Assistant (best-effort; never fatal)
+ha_notify() {
+    local title="$1"
+    local message="$2"
+    local -a auth_args=()
+    if [[ -n "${SUPERVISOR_TOKEN:-}" ]]; then
+        auth_args=(-H "Authorization: Bearer ${SUPERVISOR_TOKEN}")
+    elif [[ -n "${HA_NOTIFY_TOKEN:-}" ]]; then
+        auth_args=(-H "Authorization: Bearer ${HA_NOTIFY_TOKEN}")
+    fi
+    curl -sf -X POST "$HA_NOTIFY_URL" \
+        "${auth_args[@]}" \
+        -H "Content-Type: application/json" \
+        -d "{\"title\":\"$title\",\"message\":\"$message\"}" \
+        || true
+}
 
 cd /config
 export HA_GIT_AUTOMATED=1
