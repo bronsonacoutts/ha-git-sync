@@ -2,62 +2,35 @@
 set -euo pipefail
 
 # Git Push Script for Home Assistant Config
-# Commits local changes and pushes to origin/main.
-# Auto-recovers from stale locks; retries push up to 3 times with backoff.
+# Commits local changes, reconciles remote updates, and pushes to origin/main.
 
-HA_NOTIFY_URL="http://localhost:8123/api/services/persistent_notification/create"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=./git_runtime.sh
+. "${SCRIPT_DIR}/git_runtime.sh"
 
-ha_notify() {
-    local title="$1"
-    local message="$2"
-    local -a auth_args=()
-    if [[ -n "${SUPERVISOR_TOKEN:-}" ]]; then
-        auth_args=(-H "Authorization: Bearer ${SUPERVISOR_TOKEN}")
-    elif [[ -n "${HA_NOTIFY_TOKEN:-}" ]]; then
-        auth_args=(-H "Authorization: Bearer ${HA_NOTIFY_TOKEN}")
-    else
-        return 0
-    fi
-    local payload
-    payload="$(jq -n --arg title "$title" --arg message "$message" '{title:$title,message:$message}')"
-    curl -sf --connect-timeout 5 --max-time 10 -X POST "$HA_NOTIFY_URL" \
-        "${auth_args[@]}" \
-        -H "Content-Type: application/json" \
-        -d "$payload" \
-        || true
-}
-cd /config
-export HA_GIT_AUTOMATED=1
+prepare_repo
 
-# Remove stale git lock files
-for lock in .git/index.lock .git/refs/heads/main.lock; do
-    if [ -f "$lock" ]; then
-        echo "Removing stale lock: $lock"
-        rm -f "$lock"
-    fi
-done
+git_commit_if_needed "HA config update $(date -Iseconds)" || true
 
-# Stage and commit any remaining local changes
-git add -A
-if ! git diff --cached --quiet; then
-    git commit -m "HA config update $(date -Iseconds)"
-fi
-
-# Push with retry
-pushed=false
-for attempt in 1 2 3; do
-    if git push origin main; then
-        pushed=true
-        break
-    fi
-    echo "Push attempt $attempt failed. Waiting $((attempt * 10))s before retry..." >&2
-    sleep $((attempt * 10))
-done
-
-if ! $pushed; then
-    msg="Git push failed after 3 attempts. Check credentials and network."
+if ! git_fetch_origin_branch; then
+    msg="Git push failed: could not fetch origin/${GIT_BRANCH} before push."
     echo "$msg" >&2
     ha_notify "Git Push Failed" "$msg"
     exit 1
 fi
-echo "Git push complete: changes pushed to origin/main."
+
+if ! git_merge_origin_branch; then
+    msg="Git push failed: could not merge origin/${GIT_BRANCH} before push."
+    echo "$msg" >&2
+    ha_notify "Git Push Failed" "$msg"
+    exit 1
+fi
+
+if ! git_push_with_retry; then
+    msg="Git push failed after reconcile retries. Check credentials and network."
+    echo "$msg" >&2
+    ha_notify "Git Push Failed" "$msg"
+    exit 1
+fi
+
+echo "Git push complete: changes pushed to origin/${GIT_BRANCH}."

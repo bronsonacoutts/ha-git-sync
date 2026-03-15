@@ -115,4 +115,4 @@ Shell scripts can send best-effort HA persistent notifications. This feature dep
 - `SUPERVISOR_TOKEN` (preferred when running in supervised/add-on context)
 - `HA_NOTIFY_TOKEN` (manual fallback bearer token)
 
-If neither token is present, notification calls are skipped entirely. Missing `curl` or `jq` will also cause notifications to be silently skipped; git operations always continue regardless.
+If neither token is present, notification calls are skipped entirely. The notification endpoint defaults to `http://localhost:8123/api/services/persistent_notification/create` and can be overridden by setting `HA_NOTIFY_URL` in the environment. Missing `curl` or `jq` will also cause notifications to be silently skipped; git operations always continue regardless.

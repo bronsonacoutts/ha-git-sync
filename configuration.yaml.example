@@ -24,6 +24,7 @@ automation: !include_dir_merge_list automations/
 # (do NOT create a second shell_command: block).
 
 shell_command:
+  git_sync: /bin/bash /config/scripts/git_sync.sh
   git_pull: /bin/bash /config/scripts/git_pull.sh
   git_push: /bin/bash /config/scripts/git_push.sh
   git_status: /bin/bash /config/scripts/git_status.sh

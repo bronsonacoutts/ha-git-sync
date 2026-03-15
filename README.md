@@ -23,6 +23,13 @@ Home Assistant config changes are easy to lose track of when edits happen from m
 - **Security guardrails:** hooks, safe defaults, and documented token/secret handling.
 - **Template-based onboarding:** ready-to-merge examples for existing HA instances.
 
+## Repository role
+
+`ha-git-sync` is the canonical public core for Git-backed Home Assistant sync.
+
+- Private repos such as a real `home-assistant-config` deployment should consume these scripts and workflows, not publish them.
+- HACS-facing experiences can layer on top of this core. The companion repo `hass-autosync-lint` is intended to package Home Assistant-native setup and status plumbing around the same sync model.
+
 ## Architecture
 
 ```mermaid
@@ -161,12 +168,12 @@ If your source-of-truth is GitHub instead of local HA, do **not** use the defaul
 
 This template uses the GitHub Actions webhook flow for remote notifications (`.github/workflows/notify-ha.yml` + `HA_WEBHOOK_URL`).
 
-For local script notifications, one of these tokens can be used when available:
+Shell scripts emit best-effort Home Assistant persistent notifications. For authenticated local API calls, set one of:
 
 - `SUPERVISOR_TOKEN` (preferred in supervised/add-on contexts)
-- `HA_NOTIFY_TOKEN` (manual fallback for other environments)
+- `HA_NOTIFY_TOKEN` (manual fallback bearer token)
 
-Without either token, notification calls are skipped as best-effort and never block git operations.
+Without either token, notification calls are skipped entirely and never block git operations. The notification endpoint defaults to `http://localhost:8123/api/services/persistent_notification/create` and can be overridden via `HA_NOTIFY_URL`.
 
 ## Troubleshooting
 
@@ -196,6 +203,9 @@ Yes, with two requirements: (1) your `configuration.yaml` must include `automati
 
 **Can I run this for multiple HA instances?**  
 Yes, but keep one repo/branch strategy per instance to avoid accidental cross-overwrites.
+
+**How does this relate to `hass-autosync-lint`?**
+`ha-git-sync` is the public core sync toolkit. `hass-autosync-lint` is the companion HACS integration layer intended to package Home Assistant-native setup, status, and repair plumbing around the same sync model.
 
 See full FAQ: [docs/faq.md](docs/faq.md)
 

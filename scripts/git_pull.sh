@@ -3,53 +3,28 @@ set -euo pipefail
 
 # Git Pull Script for Home Assistant Config
 # Commits local changes then merges latest from origin/main (no push).
-# Auto-recovers from stale locks; notifies HA on unrecoverable errors.
+# Auto-recovers from stale locks, serializes syncs, and notifies HA on unrecoverable errors.
 
-HA_NOTIFY_URL="http://localhost:8123/api/services/persistent_notification/create"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=./git_runtime.sh
+. "${SCRIPT_DIR}/git_runtime.sh"
 
-ha_notify() {
-    local title="$1"
-    local message="$2"
-    local -a auth_args=()
-    if [[ -n "${SUPERVISOR_TOKEN:-}" ]]; then
-        auth_args=(-H "Authorization: Bearer ${SUPERVISOR_TOKEN}")
-    elif [[ -n "${HA_NOTIFY_TOKEN:-}" ]]; then
-        auth_args=(-H "Authorization: Bearer ${HA_NOTIFY_TOKEN}")
-    else
-        return 0
-    fi
-    local payload
-    payload="$(jq -n --arg title "$title" --arg message "$message" '{title:$title,message:$message}')"
-    curl -sf --connect-timeout 5 --max-time 10 -X POST "$HA_NOTIFY_URL" \
-        "${auth_args[@]}" \
-        -H "Content-Type: application/json" \
-        -d "$payload" \
-        || true
-}
+prepare_repo
 
-cd /config
-export HA_GIT_AUTOMATED=1
+git_commit_if_needed "HA config pre-pull commit $(date -Iseconds)" || true
 
-# Remove stale git lock files
-for lock in .git/index.lock .git/refs/heads/main.lock; do
-    if [ -f "$lock" ]; then
-        echo "Removing stale lock: $lock"
-        rm -f "$lock"
-    fi
-done
-
-# Stage and commit local changes first to avoid merge conflicts
-git add -A
-if ! git diff --cached --quiet; then
-    git commit -m "HA config pre-pull commit $(date -Iseconds)"
-fi
-
-# Fetch and merge from origin, preferring local changes on conflict
-if ! git fetch origin main; then
+if ! git_fetch_origin_branch; then
     msg="Git pull failed: could not fetch from origin. Check network/credentials."
     echo "$msg" >&2
     ha_notify "Git Pull Failed" "$msg"
     exit 1
 fi
-git merge --no-edit -X ours origin/main
-echo "Git pull complete: merged origin/main (local changes win on conflict)."
+
+if ! git_merge_origin_branch; then
+    msg="Git pull failed: could not merge origin/${GIT_BRANCH}."
+    echo "$msg" >&2
+    ha_notify "Git Pull Failed" "$msg"
+    exit 1
+fi
+
+echo "Git pull complete: merged origin/${GIT_BRANCH} (local changes win on conflict)."
