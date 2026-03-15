@@ -7,7 +7,7 @@ if (-not $OWNER) {
 }
 if (-not $OWNER) {
     # Fallback to upstream owner if environment and git remote are unavailable.
-    $OWNER = "bronsonacoutts"
+    $OWNER = "your-github-username"
 }
 $REPO  = "ha-git-sync"
 $GH_TOKEN = $env:GH_TOKEN
