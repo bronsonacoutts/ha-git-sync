@@ -13,6 +13,13 @@ prepare_repo
 
 git_commit_if_needed "HA config pre-pull commit $(date -Iseconds)" || true
 
+if ! run_extension_hooks "pre-gh-to-ha"; then
+    msg="Git pull failed: a pre-gh-to-ha hook aborted the sync."
+    echo "$msg" >&2
+    ha_notify "Git Pull Failed" "$msg"
+    exit 1
+fi
+
 if ! git_fetch_origin_branch; then
     msg="Git pull failed: could not fetch from origin. Check network/credentials."
     echo "$msg" >&2
@@ -28,3 +35,9 @@ if ! git_merge_origin_branch; then
 fi
 
 echo "Git pull complete: merged origin/${GIT_BRANCH} (local changes win on conflict)."
+if ! run_extension_hooks "post-gh-to-ha"; then
+    msg="Git pull failed: a post-gh-to-ha hook aborted follow-up actions."
+    echo "$msg" >&2
+    ha_notify "Git Pull Failed" "$msg"
+    exit 1
+fi

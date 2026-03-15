@@ -9,21 +9,29 @@
 
 - alias: "[Maintenance] Reload Automations After Git Sync"
   id: '1767772677262'
-  description: "Tags: [Domain: Maintenance, Trigger: Git Sync Complete, Action: Reload Automations]"
+  description: "Tags: Maintenance, Git, Reload - Reload YAML-managed config after GitHub-originated changes are applied on the HA box."
   trigger:
   - platform: state
-    entity_id: script.maintenance_git_sync_config
+    entity_id:
+    - script.maintenance_git_sync_config
+    - script.maintenance_git_pull_config
     from: "on"
     to: "off"
   condition: []
   action:
+  - action: homeassistant.reload_core_config
+    data: {}
   - action: automation.reload
+    data: {}
+  - action: script.reload
+    data: {}
+  - action: scene.reload
     data: {}
   mode: single
 
 - alias: "[Maintenance] Git Sync Hourly"
   id: '1767772690727'
-  description: "Tags: Maintenance, Git, Sync, Schedule"
+  description: "Tags: Maintenance, Git, Sync, Schedule - Full HA-hosted reconcile every hour."
   trigger:
   - platform: time_pattern
     hours: "*"
@@ -35,13 +43,37 @@
     action: script.turn_on
   mode: single
 
-- alias: "[Maintenance] Push Git Config After UI Changes (lovelace_updated)"
+- alias: "[Maintenance] Publish Git Config After UI-backed Changes"
   id: '1767773315131'
-  description: "Tags: Maintenance, Git, Push, UI"
+  description: "Tags: Maintenance, Git, Publish, UI - Debounced publish after dashboard or YAML reload activity initiated from the HA UI."
   trigger:
   - platform: event
     event_type: lovelace_updated
-  condition: []
+  - platform: event
+    event_type: call_service
+    event_data:
+      domain: automation
+      service: reload
+  - platform: event
+    event_type: call_service
+    event_data:
+      domain: script
+      service: reload
+  - platform: event
+    event_type: call_service
+    event_data:
+      domain: scene
+      service: reload
+  - platform: event
+    event_type: call_service
+    event_data:
+      domain: homeassistant
+      service: reload_core_config
+  condition:
+  - condition: template
+    value_template: >-
+      {{ trigger.event.event_type == 'lovelace_updated'
+         or trigger.event.context.user_id is not none }}
   action:
   - target:
       entity_id: script.maintenance_git_push_config
@@ -60,9 +92,6 @@
   - target:
       entity_id: script.maintenance_git_sync_config
     action: script.turn_on
-  - action: notify.persistent_notification
-    data:
-      message: "Git Sync triggered before major changes"
   mode: single
 
 # Nightly backup of /config to GitHub
@@ -118,7 +147,7 @@
 #    (Nabu Casa, Cloudflare Tunnel, or reverse proxy with TLS).
 - alias: "[Maintenance] Git Pull on GitHub Webhook"
   id: 'maintenance_git_pull_on_github_webhook'
-  description: "Tags: Maintenance, Git, Pull, Webhook — Pulls latest config from GitHub when notify-ha.yml fires. Skips if webhook payload contains source == 'home-assistant' (set that value in any HA-originated webhook call to prevent push→pull loops)."
+  description: "Tags: Maintenance, Git, Pull, Webhook - Pulls external main-branch changes from GitHub. HA-originated sync merges are filtered out before this webhook is sent."
   trigger:
   - platform: webhook
     webhook_id: !secret git_sync_webhook_id
@@ -131,5 +160,7 @@
   - condition: template
     value_template: "{{ trigger.json.source | default('') != 'home-assistant' }}"
   action:
-  - action: shell_command.git_pull
+  - target:
+      entity_id: script.maintenance_git_pull_config
+    action: script.turn_on
   mode: single

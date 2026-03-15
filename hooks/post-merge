@@ -13,6 +13,8 @@
 #   of the HA reload/restart commands below to automatically apply config
 #   changes after every pull.
 #
+# For reusable sync lifecycle hook directories, see hooks/README.md.
+#
 # NOTE: Restarting HA automatically after every pull is convenient but carries
 # risk. Review incoming changes before enabling auto-restart in production.
 

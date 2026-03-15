@@ -49,11 +49,23 @@ Use this index by symptom. Each section lists likely cause and concrete fix step
 2. Fix first failing command.
 3. Re-run without `-x` after fix.
 
+## HA sync PR never merges
+
+**Symptoms**
+- `git_push.sh` or `git_sync.sh` times out waiting for mergeability.
+
+**Fix**
+1. Confirm `GITHUB_API_TOKEN` or `GH_TOKEN` is set on the HA host.
+2. Open the sync PR in GitHub and inspect required checks, required reviews, and rulesets.
+3. Ensure `CI` runs on pull requests to `main`.
+4. If the PR is blocked by policy, either satisfy the policy or switch to `GITHUB_SYNC_MODE=direct`.
+
 ## Hooks are not enforced
 
 **Fix**
 1. Run `bash scripts/install_git_hooks.sh`.
 2. Confirm `.git/hooks/commit-msg` and `.git/hooks/pre-push` exist and executable.
+3. For sync lifecycle hooks, confirm your script lives in `hooks/*.d/` and is executable.
 
 ## Local branch is detached
 

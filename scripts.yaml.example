@@ -5,17 +5,24 @@
 
 maintenance_git_sync_config:
   alias: "[Maintenance] Git Sync Config"
-  description: "Run a full reconcile between Home Assistant and origin"
+  description: "Reconcile GitHub changes into HA, then publish HA changes through the configured GitHub sync flow"
   sequence:
     - service: shell_command.git_sync
   mode: single
 
+maintenance_git_pull_config:
+  alias: "[Maintenance] Git Pull Config"
+  description: "Fetch and apply GitHub changes locally without publishing anything back"
+  sequence:
+    - service: shell_command.git_pull
+  mode: single
+
 maintenance_git_push_config:
-  alias: "[Maintenance] Git Push Config"
+  alias: "[Maintenance] Git Publish Config"
   description: >-
-    Debounced full sync: waits for a 3-minute quiet window after the last UI
-    change, then reconciles local and remote changes in one run. mode: restart
-    resets the timer on every new trigger so rapid edits are batched.
+    Debounced HA-to-GitHub publish: waits for a 3-minute quiet window after the
+    last UI-backed config change, then runs the full reconcile flow. mode:
+    restart resets the timer on every new trigger so rapid edits are batched.
   sequence:
     - delay: "00:03:00"
     - service: script.maintenance_git_sync_config

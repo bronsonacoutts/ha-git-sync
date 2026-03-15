@@ -33,10 +33,11 @@ This project is designed with safe defaults, but final security depends on your 
 ## Repository hardening checklist
 
 - Protect `main` with PR-only merges.
-- Require status checks: `CI / shellcheck`, `CI / yamllint`, `CodeQL`.
+- Require status checks: `CI / shellcheck`, `CI / validate-automations`, `CI / yamllint`, `CodeQL`.
 - Enable secret scanning and push protection.
 - Enable Dependabot alerts and automated security updates.
 - Restrict who can bypass branch protections.
+- If HA-hosted PR merges are automated, scope that token narrowly and exempt only the automation actor that owns the `ha-sync/*` branches.
 
 ## Incident response
 
