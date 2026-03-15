@@ -7,6 +7,7 @@ set -euo pipefail
 # Runs locally and pushes deletions to origin.
 
 KEEP_DAYS="${1:-30}"
+HA_NOTIFY_URL="http://localhost:8123/api/services/persistent_notification/create"
 
 cd /config
 
@@ -18,13 +19,18 @@ ha_notify() {
         auth_args=(-H "Authorization: Bearer ${SUPERVISOR_TOKEN}")
     elif [[ -n "${HA_NOTIFY_TOKEN:-}" ]]; then
         auth_args=(-H "Authorization: Bearer ${HA_NOTIFY_TOKEN}")
+    else
+        return 0
     fi
-    curl -sf -X POST "http://localhost:8123/api/services/persistent_notification/create" \
+    local payload
+    payload="$(jq -n --arg title "$title" --arg message "$message" '{title:$title,message:$message}')"
+    curl -sf --connect-timeout 5 --max-time 10 -X POST "$HA_NOTIFY_URL" \
         "${auth_args[@]}" \
         -H "Content-Type: application/json" \
-        -d "{\"title\":\"$title\",\"message\":\"$message\"}" \
+        -d "$payload" \
         || true
 }
+
 echo "Pruning backup/nightly-* tags older than ${KEEP_DAYS} days..."
 
 # Fetch tags from origin so the local list is current
@@ -46,3 +52,4 @@ while IFS= read -r tag; do
 done < <(git tag -l "backup/nightly-*" | sort)
 
 echo "Backup cleanup complete: ${deleted} tag(s) removed (kept last ${KEEP_DAYS} days)."
+ha_notify "Backup Cleanup Complete" "${deleted} nightly tag(s) removed (kept last ${KEEP_DAYS} days)."

@@ -8,7 +8,8 @@ set -euo pipefail
 commit_message="${1:-HA config sync $(date -Iseconds)}"
 HA_NOTIFY_URL="http://localhost:8123/api/services/persistent_notification/create"
 
-# Send a persistent notification to Home Assistant (best-effort; never fatal)
+# Send a persistent notification to Home Assistant (best-effort; never fatal).
+# Skipped when neither SUPERVISOR_TOKEN nor HA_NOTIFY_TOKEN is set.
 ha_notify() {
     local title="$1"
     local message="$2"
@@ -17,11 +18,15 @@ ha_notify() {
         auth_args=(-H "Authorization: Bearer ${SUPERVISOR_TOKEN}")
     elif [[ -n "${HA_NOTIFY_TOKEN:-}" ]]; then
         auth_args=(-H "Authorization: Bearer ${HA_NOTIFY_TOKEN}")
+    else
+        return 0
     fi
-    curl -sf -X POST "$HA_NOTIFY_URL" \
+    local payload
+    payload="$(jq -n --arg title "$title" --arg message "$message" '{title:$title,message:$message}')"
+    curl -sf --connect-timeout 5 --max-time 10 -X POST "$HA_NOTIFY_URL" \
         "${auth_args[@]}" \
         -H "Content-Type: application/json" \
-        -d "{\"title\":\"$title\",\"message\":\"$message\"}" \
+        -d "$payload" \
         || true
 }
 
@@ -61,5 +66,6 @@ done
 if ! $pushed; then
     msg="Git sync push failed after 3 attempts. Check credentials and network."
     echo "$msg" >&2
+    ha_notify "Git Sync Failed" "$msg"
     exit 1
 fi
