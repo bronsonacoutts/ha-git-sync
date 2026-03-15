@@ -110,4 +110,4 @@ The GitHub Actions webhook must reach your HA instance over the internet:
 
 ## Optional post-merge REST token
 
-Default sync scripts do not call the HA REST notification endpoint. If you enable the optional REST API snippet in `hooks/post-merge`, provide `SUPERVISOR_TOKEN` (or another valid bearer token) through your environment and keep it out of tracked files.
+Default sync scripts only call the HA REST notification endpoint when you opt in by setting `HA_NOTIFY_URL` in the runtime environment. If you enable the optional REST API snippet in `hooks/post-merge` or script-level notifications, provide a valid local endpoint and token-bearing environment separately, and keep them out of tracked files.

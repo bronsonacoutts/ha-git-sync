@@ -23,6 +23,13 @@ Home Assistant config changes are easy to lose track of when edits happen from m
 - **Security guardrails:** hooks, safe defaults, and documented token/secret handling.
 - **Template-based onboarding:** ready-to-merge examples for existing HA instances.
 
+## Repository role
+
+`ha-git-sync` is the canonical public core for Git-backed Home Assistant sync.
+
+- Private repos such as a real `home-assistant-config` deployment should consume these scripts and workflows, not publish them.
+- HACS-facing experiences can layer on top of this core. The companion repo `hass-autosync-lint` is intended to package Home Assistant-native setup and status plumbing around the same sync model.
+
 ## Architecture
 
 ```mermaid
@@ -159,7 +166,9 @@ If your source-of-truth is GitHub instead of local HA, do **not** use the defaul
 
 ## Notifications
 
-This template uses the GitHub Actions webhook flow for remote notifications (`.github/workflows/notify-ha.yml` + `HA_WEBHOOK_URL`). Local shell scripts focus on sync operations and do not call the HA REST notification endpoint.
+This template uses the GitHub Actions webhook flow for remote notifications (`.github/workflows/notify-ha.yml` + `HA_WEBHOOK_URL`).
+
+Local shell scripts can also emit best-effort Home Assistant persistent notifications when `HA_NOTIFY_URL` is set in the runtime environment. If `HA_NOTIFY_URL` is unset, the scripts run without local notification side effects.
 
 ## Troubleshooting
 
@@ -189,6 +198,9 @@ Yes, with two requirements: (1) your `configuration.yaml` must include `automati
 
 **Can I run this for multiple HA instances?**  
 Yes, but keep one repo/branch strategy per instance to avoid accidental cross-overwrites.
+
+**How does this relate to `hass-autosync-lint`?**
+`ha-git-sync` is the public core sync toolkit. `hass-autosync-lint` is the companion HACS integration layer intended to package Home Assistant-native setup, status, and repair plumbing around the same sync model.
 
 See full FAQ: [docs/faq.md](docs/faq.md)
 
