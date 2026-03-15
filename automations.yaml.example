@@ -14,7 +14,7 @@
 
 - id: '1767772677262'
   alias: '[Maintenance] Reload Automations After Git Sync'
-  description: 'Reload automations whenever a git sync completes'
+  description: 'Reload core config, automations, scripts, and scenes whenever a git sync completes'
   trigger:
   - entity_id: script.maintenance_git_sync_config
     from: 'on'
@@ -22,13 +22,19 @@
     trigger: state
   condition: []
   action:
-  - data: {}
-    action: automation.reload
+  - action: homeassistant.reload_core_config
+  - action: automation.reload
+  - action: script.reload
+  - action: scene.reload
+  - action: persistent_notification.create
+    data:
+      title: Git Sync Applied
+      message: Git changes were pulled into Home Assistant and reload services were called.
   mode: single
 
 - id: '1767772690727'
   alias: '[Maintenance] Git Sync Hourly'
-  description: 'Pull from GitHub then push local changes every hour'
+  description: 'Reconcile Home Assistant with GitHub every hour'
   trigger:
   - hours: '*'
     minutes: 0
@@ -42,7 +48,7 @@
 
 - id: '1767773315131'
   alias: '[Maintenance] Push Git Config After UI Changes (lovelace_updated)'
-  description: 'Debounced push whenever the Lovelace dashboard is saved'
+  description: 'Debounced full sync whenever the Lovelace dashboard is saved'
   trigger:
   - event_type: lovelace_updated
     trigger: event
@@ -118,7 +124,7 @@
     action: script.turn_on
   mode: single
 
-# Webhook-triggered pull: fired by notify-ha.yml GitHub Actions workflow
+# Webhook-triggered sync: fired by notify-ha.yml GitHub Actions workflow
 # on every push/merge to main that did NOT originate from HA itself.
 #
 # SECRETS REQUIRED
@@ -134,8 +140,8 @@
 # 3. Ensure your HA instance is reachable from the internet
 #    (Nabu Casa, Cloudflare Tunnel, or reverse proxy with TLS).
 - id: 'maintenance_git_pull_on_github_webhook'
-  alias: '[Maintenance] Git Pull on GitHub Webhook'
-  description: "Tags: Maintenance, Git, Pull, Webhook — Pulls latest config from GitHub when notify-ha.yml fires. Skips if webhook payload contains source == 'home-assistant' (set that value in any HA-originated webhook call to prevent push→pull loops)."
+  alias: '[Maintenance] Git Sync on GitHub Webhook'
+  description: "Tags: Maintenance, Git, Sync, Webhook - Reconciles Home Assistant with GitHub when notify-ha.yml fires. Skips if webhook payload contains source == 'home-assistant' (set that value in any HA-originated webhook call to prevent push-pull loops)."
   trigger:
   - trigger: webhook
     webhook_id: !secret git_sync_webhook_id
@@ -146,5 +152,7 @@
   - condition: template
     value_template: "{{ trigger.json.source | default('') != 'home-assistant' }}"
   action:
-  - action: shell_command.git_pull
+  - target:
+      entity_id: script.maintenance_git_sync_config
+    action: script.turn_on
   mode: single

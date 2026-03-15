@@ -5,21 +5,20 @@
 
 maintenance_git_sync_config:
   alias: "[Maintenance] Git Sync Config"
-  description: "Pull upstream changes then push local changes to origin"
+  description: "Run a full reconcile between Home Assistant and origin"
   sequence:
-    - service: shell_command.git_pull
-    - service: shell_command.git_push
+    - service: shell_command.git_sync
   mode: single
 
 maintenance_git_push_config:
   alias: "[Maintenance] Git Push Config"
   description: >-
-    Debounced push: waits for a 3-minute quiet window after the last UI change
-    before committing and pushing. mode: restart resets the timer on every new
-    trigger so rapid edits are batched into a single git operation.
+    Debounced full sync: waits for a 3-minute quiet window after the last UI
+    change, then reconciles local and remote changes in one run. mode: restart
+    resets the timer on every new trigger so rapid edits are batched.
   sequence:
     - delay: "00:03:00"
-    - service: shell_command.git_push
+    - service: script.maintenance_git_sync_config
   mode: restart
 
 maintenance_git_status:
