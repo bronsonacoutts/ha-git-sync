@@ -1,0 +1,45 @@
+# .gitignore — Recommended for Home Assistant Git-backed config repos
+#
+# Copy this file to .gitignore in the root of your HA config repository.
+# Adjust paths as needed for your installation.
+
+# ── Home Assistant runtime (never commit) ─────────────────────────────────────
+home-assistant.log*
+home-assistant_v2.db*
+.homeassistant/
+.ha_run.lock
+zigbee.db*
+*.db-shm
+*.db-wal
+
+# ── Secrets and credentials (NEVER commit) ───────────────────────────────────
+secrets.yaml
+.gitconfig
+.git-credentials
+.ssh/
+.env
+*.pem
+*.key
+
+# ── Backups (large binary archives) ──────────────────────────────────────────
+backup/
+.backups/
+backups/*.tar.gz
+
+# ── Home Assistant storage and cloud ─────────────────────────────────────────
+.cloud/
+.storage/
+.uuid
+
+# ── TTS cache ────────────────────────────────────────────────────────────────
+tts/
+
+# ── Python caches ────────────────────────────────────────────────────────────
+__pycache__/
+*.pyc
+
+# ── Editor and OS artifacts ──────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

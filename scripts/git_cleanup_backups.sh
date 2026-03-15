@@ -8,7 +8,8 @@ set -euo pipefail
 
 KEEP_DAYS="${1:-30}"
 
-cd /config
+REPO_DIR="${HA_CONFIG_DIR:-/config}"
+cd "$REPO_DIR"
 
 echo "Pruning backup/nightly-* tags older than ${KEEP_DAYS} days..."
 
