@@ -58,16 +58,16 @@ deploy key or a dedicated SSH key without a passphrase.
    Host github.com
        IdentityFile /root/.ssh/ha_git_sync_ed25519
        IdentitiesOnly yes
-      StrictHostKeyChecking yes
-      UserKnownHostsFile /root/.ssh/known_hosts
+       StrictHostKeyChecking yes
+       UserKnownHostsFile /root/.ssh/known_hosts
    ```
 
-    Then seed known hosts:
+   Then seed known hosts:
 
-    ```bash
-    ssh-keyscan -t ed25519 github.com >> /root/.ssh/known_hosts
-    chmod 644 /root/.ssh/known_hosts
-    ```
+   ```bash
+   ssh-keyscan -t ed25519 github.com >> /root/.ssh/known_hosts
+   chmod 644 /root/.ssh/known_hosts
+   ```
 
 4. **Test the connection**:
 
@@ -110,9 +110,9 @@ The GitHub Actions webhook must reach your HA instance over the internet:
 
 ## Optional script notification token
 
-Shell scripts can send best-effort HA persistent notifications. For authenticated local API calls, expose one of:
+Shell scripts can send best-effort HA persistent notifications. This feature depends on `curl` and `jq` being available on the HA host. For authenticated local API calls, expose one of:
 
 - `SUPERVISOR_TOKEN` (preferred when running in supervised/add-on context)
 - `HA_NOTIFY_TOKEN` (manual fallback bearer token)
 
-If neither is present, scripts continue without failing git operations.
+If neither token is present, notification calls are skipped entirely. Missing `curl` or `jq` will also cause notifications to be silently skipped; git operations always continue regardless.

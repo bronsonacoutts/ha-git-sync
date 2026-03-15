@@ -15,11 +15,15 @@ ha_notify() {
         auth_args=(-H "Authorization: Bearer ${SUPERVISOR_TOKEN}")
     elif [[ -n "${HA_NOTIFY_TOKEN:-}" ]]; then
         auth_args=(-H "Authorization: Bearer ${HA_NOTIFY_TOKEN}")
+    else
+        return 0
     fi
-    curl -sf -X POST "$HA_NOTIFY_URL" \
+    local payload
+    payload="$(jq -n --arg title "$title" --arg message "$message" '{title:$title,message:$message}')"
+    curl -sf --connect-timeout 5 --max-time 10 -X POST "$HA_NOTIFY_URL" \
         "${auth_args[@]}" \
         -H "Content-Type: application/json" \
-        -d "{\"title\":\"$title\",\"message\":\"$message\"}" \
+        -d "$payload" \
         || true
 }
 
@@ -44,6 +48,7 @@ fi
 if ! git fetch origin main; then
     msg="Git pull failed: could not fetch from origin. Check network/credentials."
     echo "$msg" >&2
+    ha_notify "Git Pull Failed" "$msg"
     exit 1
 fi
 git merge --no-edit -X ours origin/main

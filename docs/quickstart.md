@@ -72,7 +72,7 @@ This enables commit message validation and blocks direct pushes to protected bra
 
 Enable by creating these files in your repo:
 
-- `.github/upstream-sync.enabled` for upstream template sync PRs (`.github/workflows/upstream-sync-pr.yml`).
+- `.github/upstream-sync.enabled` for upstream template sync PRs (`.github/workflows/upstream-sync.yml`).
 - `.github/automation-alias-autocorrect.enabled` for alias normalization PRs (`.github/workflows/automation-alias-autocorrect.yml`).
 
 ## 7) Run your first safe sync job
