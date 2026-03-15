@@ -6,22 +6,33 @@ REPO_DIR="${HA_CONFIG_DIR:-/config}"
 GIT_BRANCH="${GIT_BRANCH:-main}"
 GIT_USER_NAME="${GIT_USER_NAME:-ha-git-sync}"
 GIT_USER_EMAIL="${GIT_USER_EMAIL:-ha-git-sync@localhost}"
-HA_NOTIFY_URL="${HA_NOTIFY_URL:-}"
+HA_NOTIFY_URL="${HA_NOTIFY_URL:-http://localhost:8123/api/services/persistent_notification/create}"
 GIT_SYNC_LOCK_DIR="${GIT_SYNC_LOCK_DIR:-${REPO_DIR}/.git/ha-git-sync.lock}"
 GIT_SYNC_LOCK_WAIT_SEC="${GIT_SYNC_LOCK_WAIT_SEC:-180}"
 GIT_SYNC_LOCK_STALE_SEC="${GIT_SYNC_LOCK_STALE_SEC:-600}"
 
+# Send a persistent notification to Home Assistant (best-effort; never fatal).
+# Skipped when neither SUPERVISOR_TOKEN nor HA_NOTIFY_TOKEN is set.
+# Requires curl and jq; silently skipped if either is missing.
 ha_notify() {
     local title="$1"
     local message="$2"
+    local -a auth_args=()
 
-    if [ -z "$HA_NOTIFY_URL" ]; then
+    if [[ -n "${SUPERVISOR_TOKEN:-}" ]]; then
+        auth_args=(-H "Authorization: Bearer ${SUPERVISOR_TOKEN}")
+    elif [[ -n "${HA_NOTIFY_TOKEN:-}" ]]; then
+        auth_args=(-H "Authorization: Bearer ${HA_NOTIFY_TOKEN}")
+    else
         return 0
     fi
 
-    curl -sf -X POST "$HA_NOTIFY_URL" \
+    local payload
+    payload="$(jq -n --arg title "$title" --arg message "$message" '{title:$title,message:$message}')" || return 0
+    curl -sf --connect-timeout 5 --max-time 10 -X POST "$HA_NOTIFY_URL" \
+        "${auth_args[@]}" \
         -H "Content-Type: application/json" \
-        -d "{\"title\":\"$title\",\"message\":\"$message\"}" \
+        -d "$payload" \
         || true
 }
 

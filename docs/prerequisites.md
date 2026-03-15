@@ -58,16 +58,16 @@ deploy key or a dedicated SSH key without a passphrase.
    Host github.com
        IdentityFile /root/.ssh/ha_git_sync_ed25519
        IdentitiesOnly yes
-         StrictHostKeyChecking yes
-         UserKnownHostsFile /root/.ssh/known_hosts
+       StrictHostKeyChecking yes
+       UserKnownHostsFile /root/.ssh/known_hosts
    ```
 
-      Then seed known hosts:
+   Then seed known hosts:
 
-      ```bash
-      ssh-keyscan -t ed25519 github.com >> /root/.ssh/known_hosts
-      chmod 644 /root/.ssh/known_hosts
-      ```
+   ```bash
+   ssh-keyscan -t ed25519 github.com >> /root/.ssh/known_hosts
+   chmod 644 /root/.ssh/known_hosts
+   ```
 
 4. **Test the connection**:
 
@@ -108,6 +108,11 @@ The GitHub Actions webhook must reach your HA instance over the internet:
 - **Reverse proxy / port-forwarding**: Ensure TCP 443 is forwarded to HA and a valid TLS certificate is in place.
 - **No public access**: Use a self-hosted GitHub Actions runner inside your network instead of the default GitHub-hosted runner.
 
-## Optional post-merge REST token
+## Optional script notification token
 
-Default sync scripts only call the HA REST notification endpoint when you opt in by setting `HA_NOTIFY_URL` in the runtime environment. If you enable the optional REST API snippet in `hooks/post-merge` or script-level notifications, provide a valid local endpoint and token-bearing environment separately, and keep them out of tracked files.
+Shell scripts can send best-effort HA persistent notifications. This feature depends on `curl` and `jq` being available on the HA host. For authenticated local API calls, expose one of:
+
+- `SUPERVISOR_TOKEN` (preferred when running in supervised/add-on context)
+- `HA_NOTIFY_TOKEN` (manual fallback bearer token)
+
+If neither token is present, notification calls are skipped entirely. The notification endpoint defaults to `http://localhost:8123/api/services/persistent_notification/create` and can be overridden by setting `HA_NOTIFY_URL` in the environment. Missing `curl` or `jq` will also cause notifications to be silently skipped; git operations always continue regardless.

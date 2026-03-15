@@ -3,7 +3,7 @@ set -euo pipefail
 
 # Git Pull Script for Home Assistant Config
 # Commits local changes then merges latest from origin/main (no push).
-# Auto-recovers from stale locks, serializes syncs, and exits clearly.
+# Auto-recovers from stale locks, serializes syncs, and notifies HA on unrecoverable errors.
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=./git_runtime.sh

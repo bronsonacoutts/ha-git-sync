@@ -57,7 +57,7 @@ How to read this: local HA changes and repo changes converge through sync jobs; 
    - Follow [docs/git-setup.md](docs/git-setup.md).
    - Keep credentials in secure HA secrets paths; never hardcode in tracked files.
 4. **Enable workflows**
-   - Optional upstream sync (`.github/workflows/upstream-sync-pr.yml`): create `.github/upstream-sync.enabled`.
+   - Optional upstream sync (`.github/workflows/upstream-sync.yml`): create `.github/upstream-sync.enabled`.
    - Optional alias autocorrect: create `.github/automation-alias-autocorrect.enabled`.
 5. **Run first sync safely**
    - Run `scripts/git_status.sh`, then `scripts/git_sync.sh` from `/config`.
@@ -168,7 +168,12 @@ If your source-of-truth is GitHub instead of local HA, do **not** use the defaul
 
 This template uses the GitHub Actions webhook flow for remote notifications (`.github/workflows/notify-ha.yml` + `HA_WEBHOOK_URL`).
 
-Local shell scripts can also emit best-effort Home Assistant persistent notifications when `HA_NOTIFY_URL` is set in the runtime environment. If `HA_NOTIFY_URL` is unset, the scripts run without local notification side effects.
+Shell scripts emit best-effort Home Assistant persistent notifications. For authenticated local API calls, set one of:
+
+- `SUPERVISOR_TOKEN` (preferred in supervised/add-on contexts)
+- `HA_NOTIFY_TOKEN` (manual fallback bearer token)
+
+Without either token, notification calls are skipped entirely and never block git operations. The notification endpoint defaults to `http://localhost:8123/api/services/persistent_notification/create` and can be overridden via `HA_NOTIFY_URL`.
 
 ## Troubleshooting
 
