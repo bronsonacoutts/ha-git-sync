@@ -114,7 +114,7 @@ while IFS= read -r file; do
     [[ -n "$file" ]] || continue
 
     case "$file" in
-        .github/*|docs/*|examples/*|gh-backup/*|hooks/*|pulls/*|tests/*|README.md|*.md|LICENSE|SECURITY.md|SUPPORT.md|CODE_OF_CONDUCT.md|CONTRIBUTING.md|.gitignore|.gitconfig.example|.ssh/*)
+        .github/*|docs/*|examples/*|gh-backup/*|hooks/*|pulls/*|tests/*|README.md|*.md|LICENSE|SECURITY.md|SUPPORT.md|CODE_OF_CONDUCT.md|CONTRIBUTING.md|.gitignore|.gitconfig.example|configuration.yaml.example|*.example|scripts/*|.ssh/*)
             continue
             ;;
     esac
