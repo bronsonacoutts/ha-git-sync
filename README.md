@@ -19,6 +19,7 @@ Home Assistant config changes are easy to lose track of when edits happen from m
 
 - **Bi-directional sync model:** pull from GitHub and push local HA updates.
 - **Local-wins conflict policy:** sync scripts use `git merge -X ours`, meaning **local HA `/config` edits always win** on line-level conflicts. Non-conflicting upstream changes merge cleanly. See [Conflict policy](#conflict-policy-important) for details.
+- **Automatic HA apply step after merges:** `hooks/post-merge` runs `scripts/ha_apply_changes.sh` so merged config is reloaded on the HA host, and a full restart is triggered when changed files require it.
 - **GitHub Actions automation:** optional update PRs and automation alias correction.
 - **Security guardrails:** hooks, safe defaults, and documented token/secret handling.
 - **Template-based onboarding:** ready-to-merge examples for existing HA instances.
@@ -62,7 +63,9 @@ How to read this: local HA changes and repo changes converge through sync jobs; 
 5. **Run first sync safely**
    - Run `scripts/git_status.sh`, then `scripts/git_sync.sh` from `/config`.
 6. **Verify checks pass**
-   - In GitHub, confirm `CI / shellcheck`, `CI / yamllint`, `CI / validate-automations`, and `CodeQL` are green.
+   - In GitHub, confirm `CI / shellcheck`, `CI / yamllint`, and `CodeQL` are green.
+7. **Install hooks**
+   - Run `scripts/install_git_hooks.sh` so `post-merge` can reload HA config or request a restart after merges.
 
 > [!TIP]
 > Start in a private test repository first, then mirror settings into production.
@@ -112,6 +115,7 @@ Recommended protections for `main`:
 - **Recovery after failed sync:** inspect `git status`, resolve file issues, rerun `scripts/git_sync.sh`.
 - **Conflict resolution:** run pull, resolve conflicts locally in `/config`, commit with clear message, push.
 - **Safe rollback:** identify known-good commit/tag, checkout in a staging copy, validate HA startup, then apply.
+- **After each merge on the HA host:** `post-merge` runs `scripts/ha_apply_changes.sh` to reload what can be reloaded and restart HA when merged files require it.
 
 Full runbook: [docs/operations.md](docs/operations.md)
 

@@ -30,3 +30,4 @@ shell_command:
   git_nightly_backup: /bin/bash /config/scripts/git_nightly_backup.sh
   git_weekly_snapshot: /bin/bash /config/scripts/git_weekly_snapshot.sh
   git_cleanup_backups: /bin/bash /config/scripts/git_cleanup_backups.sh
+  install_git_hooks: /bin/bash /config/scripts/install_git_hooks.sh
