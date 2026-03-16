@@ -38,13 +38,37 @@
         message: "Git pull failed (exit {{ pull_result.return_code }}). Check HA logs."
   mode: single
 
-- alias: "[Maintenance] Push Git Config After UI Changes"
+- alias: "[Maintenance] Push Git Config After UI-backed Changes"
   id: '1767773315131'
-  description: "Debounced push whenever the Lovelace dashboard is saved. 3 min quiet-window."
+  description: "Tags: Maintenance, Git, Push, UI - Debounced publish after dashboard or YAML reload activity initiated from the HA UI."
   trigger:
   - platform: event
     event_type: lovelace_updated
-  condition: []
+  - platform: event
+    event_type: call_service
+    event_data:
+      domain: automation
+      service: reload
+  - platform: event
+    event_type: call_service
+    event_data:
+      domain: script
+      service: reload
+  - platform: event
+    event_type: call_service
+    event_data:
+      domain: scene
+      service: reload
+  - platform: event
+    event_type: call_service
+    event_data:
+      domain: homeassistant
+      service: reload_core_config
+  condition:
+  - condition: template
+    value_template: >-
+      {{ trigger.event.event_type == 'lovelace_updated'
+         or trigger.event.context.user_id is not none }}
   action:
   - action: script.maintenance_git_push_config
   mode: single
@@ -171,4 +195,5 @@
     value_template: "{{ trigger.json.source | default('') != 'home-assistant' }}"
   action:
   - action: shell_command.git_pull
-  mode: single
+  mode: queued
+  max: 2
