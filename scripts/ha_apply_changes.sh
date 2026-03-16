@@ -42,6 +42,7 @@ call_ha_service() {
 
     if [[ -n "${HA_NOTIFY_TOKEN:-}" ]]; then
         curl --fail --silent --show-error \
+            --connect-timeout 5 --max-time 15 --retry 2 \
             --request POST \
             --header "Authorization: Bearer ${HA_NOTIFY_TOKEN}" \
             --header "Content-Type: application/json" \
@@ -52,6 +53,7 @@ call_ha_service() {
 
     if [[ -n "${SUPERVISOR_TOKEN:-}" ]]; then
         curl --fail --silent --show-error \
+            --connect-timeout 5 --max-time 15 --retry 2 \
             --request POST \
             --header "Authorization: Bearer ${SUPERVISOR_TOKEN}" \
             --header "Content-Type: application/json" \
