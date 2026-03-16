@@ -1,15 +1,23 @@
+$originUrl = git remote get-url origin 2>$null
+
 $OWNER = $env:GH_OWNER
 if (-not $OWNER) {
-    $originUrl = git remote get-url origin 2>$null
     if ($LASTEXITCODE -eq 0 -and $originUrl -match '[:/](?<owner>[^/]+)/(?<repo>[^/\.]+)(?:\.git)?$') {
         $OWNER = $Matches['owner']
     }
 }
 if (-not $OWNER) {
-    # Fallback to upstream owner if environment and git remote are unavailable.
-    $OWNER = "bronsonacoutts"
+    throw "Could not determine repository owner. Set GH_OWNER env var or configure a git remote."
 }
-$REPO  = "ha-git-sync"
+$REPO = $env:GH_REPO
+if (-not $REPO) {
+    if ($originUrl -and $originUrl -match '[:/](?<owner>[^/]+)/(?<repo>[^/\.]+)(?:\.git)?$') {
+        $REPO = $Matches['repo']
+    }
+}
+if (-not $REPO) {
+    $REPO = "ha-git-sync"
+}
 $GH_TOKEN = $env:GH_TOKEN
 
 if (-not $GH_TOKEN) { throw "Set GH_TOKEN env var first." }

@@ -9,7 +9,8 @@ set -euo pipefail
 KEEP_DAYS="${1:-30}"
 HA_NOTIFY_URL="http://localhost:8123/api/services/persistent_notification/create"
 
-cd /config
+REPO_DIR="${HA_CONFIG_DIR:-/config}"
+cd "$REPO_DIR"
 
 ha_notify() {
     local title="$1"

@@ -3,26 +3,32 @@
 # Add this to your /config/scripts.yaml (create the file if it doesn't exist).
 # Ensure configuration.yaml contains:  script: !include scripts.yaml
 
+maintenance_git_sync_config:
+  alias: "[Maintenance] Git Sync Config"
+  description: "Reconcile GitHub changes into HA, then publish HA changes through the configured GitHub sync flow"
+  sequence:
+    - service: shell_command.git_sync
+  mode: single
+
+maintenance_git_pull_config:
+  alias: "[Maintenance] Git Pull Config"
+  description: "Fetch and apply GitHub changes locally without publishing anything back"
+  sequence:
+    - service: shell_command.git_pull
+  mode: single
+
 maintenance_git_push_config:
   alias: "[Maintenance] Git Publish Config"
   description: >-
     Debounced HA-to-GitHub publish: waits for a 3-minute quiet window after the
     last UI-backed config change, then runs the full reconcile flow. mode:
     restart resets the timer on every new trigger so rapid edits are batched.
-    Skips starting a new sync if one has started or completed within the last 2 minutes
-    (including when a sync is currently running).
+    Skips starting a new sync if one has started or completed within the last
+    2 minutes.
   sequence:
     - condition: template
       value_template: >-
         {{ (now() - states.script.maintenance_git_sync_config.last_changed).total_seconds() > 120 }}
     - delay: "00:03:00"
-    - action: shell_command.git_push
+    - action: script.maintenance_git_sync_config
   mode: restart
-
-maintenance_git_sync_config:
-  alias: "[Maintenance] Git Sync Config"
-  description: "Pull then push — used by the reload automation trigger."
-  sequence:
-    - action: shell_command.git_pull
-    - action: shell_command.git_push
-  mode: single

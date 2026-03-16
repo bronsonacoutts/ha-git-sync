@@ -1,7 +1,9 @@
 # .github/workflows/notify-ha.yml
 #
-# Sends a webhook to Home Assistant after every push to the main branch,
+# Sends a webhook to Home Assistant after external pushes to the main branch,
 # triggering the git_sync_pull_on_webhook automation to pull the latest config.
+# HA-originated sync merges are marked with [ha-sync] and skipped here so the
+# HA box does not immediately pull back the merge commit it just created.
 #
 # REQUIRED REPOSITORY SECRET
 # --------------------------
@@ -21,12 +23,10 @@
 #
 # LOOP PREVENTION
 # ---------------
-# This workflow always sends `{"source":"github-actions",...}` in the POST body.
-# The companion HA automation (maintenance_git_pull_on_github_webhook) can use
-# this `source` field to distinguish GitHub-originated events from other sources.
-# If you also configure Home Assistant to send webhooks back to GitHub, choose a
-# different `source` value there (for example, "home-assistant") and update that
-# automation's conditions accordingly to avoid creating pull/push loops.
+# This workflow only sends `{"source":"github-actions",...}` for pushes that do
+# not contain the configured HA sync marker in the head commit message.
+# The companion HA automation can still use `source` to distinguish
+# GitHub-originated events from other sources.
 #
 # PERMISSIONS
 # -----------
@@ -45,8 +45,7 @@ jobs:
   notify-ha:
     name: Send webhook to Home Assistant
     runs-on: ubuntu-latest
-    # Skip if this push came from HA itself (commit message starts with "HA ")
-    if: ${{ !startsWith(github.event.head_commit.message, 'HA ') }}
+    if: ${{ !contains(github.event.head_commit.message, '[ha-sync]') && !startsWith(github.event.head_commit.message, 'HA ') }}
     permissions:
       contents: read
     steps:

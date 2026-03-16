@@ -6,17 +6,15 @@ set -euo pipefail
 # date-stamped backup tag (backup/nightly-YYYY-MM-DD) for the
 # rolling 30-day backup window.
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_DIR="${HA_CONFIG_DIR:-/config}"
-SCRIPTS_DIR="${REPO_DIR}/scripts"
-
 cd "$REPO_DIR"
-export HA_GIT_AUTOMATED=1
 
-"${SCRIPTS_DIR}/git_pull.sh"
-"${SCRIPTS_DIR}/git_push.sh" "HA nightly backup $(date -Iseconds)"
+"${SCRIPT_DIR}/git_sync.sh" "HA nightly backup $(date -Iseconds)"
 
+# Create (or overwrite) the nightly backup tag for today
 TODAY=$(date +"%Y-%m-%d")
 TAG="backup/nightly-${TODAY}"
 git tag -f "$TAG" HEAD
 git push origin "$TAG" --force
-echo "[ha-git-sync] Nightly backup tag: ${TAG}"
+echo "Nightly backup tag set: ${TAG}"

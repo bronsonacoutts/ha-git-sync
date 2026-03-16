@@ -145,16 +145,19 @@ cd /config
 # Test pull
 git pull origin main
 
-# Test push (creates a test commit)
+# Test push to a temporary sync branch
 echo "# Test" >> /tmp/test.txt
 git add /tmp/test.txt
 git commit -m "Test git authentication"
-git push origin main
+git push origin HEAD:ha-sync/auth-check
 
 # Clean up test file
 git rm /tmp/test.txt
 git commit -m "Remove test file"
-git push origin main
+git push origin HEAD:ha-sync/auth-check
+
+# Optional: delete the temporary auth-check branch after verification
+git push origin --delete ha-sync/auth-check
 ```
 
 ✅ **If all commands succeed, SSH authentication is working!**
@@ -251,8 +254,11 @@ cd /config
 # Test pull
 git pull origin main
 
-# Test push
-git push origin main
+# Test push to a temporary sync branch
+git push origin HEAD:ha-sync/auth-check
+
+# Optional: delete the temporary auth-check branch after verification
+git push origin --delete ha-sync/auth-check
 ```
 
 ✅ **If commands succeed, HTTPS authentication is working!**
@@ -267,7 +273,7 @@ After setting up authentication, verify everything works:
 - [ ] `git config user.name` shows your name
 - [ ] `git config user.email` shows your email  
 - [ ] `git pull origin main` succeeds without errors
-- [ ] `git push origin main` succeeds without errors
+- [ ] `git push origin HEAD:ha-sync/auth-check` succeeds without errors
 - [ ] Home Assistant shell commands work:
   - [ ] `shell_command.git_status` shows current status
   - [ ] `shell_command.git_pull` completes successfully

@@ -1,0 +1,164 @@
+# automations.yaml — Git Sync Automations Snippet  (single-file approach)
+#
+# ALTERNATIVE: If your configuration.yaml already uses
+#   automation: !include_dir_merge_list automations/
+# then the automations in the automations/ directory are loaded directly and
+# you do NOT need this file.  See configuration.yaml.example for the
+# recommended setup.
+#
+# If instead you use a single root automations.yaml
+#   (automation: !include automations.yaml)
+# append these entries to your existing /config/automations.yaml.
+# IMPORTANT: every automation needs a unique id. The IDs below are safe
+# to use as-is; change them only if they clash with IDs already in your file.
+
+- id: '1767772677262'
+  alias: '[Maintenance] Reload Automations After Git Sync'
+  description: 'Reload core config, automations, scripts, and scenes whenever GitHub-originated changes are applied on the HA box'
+  trigger:
+  - entity_id:
+    - script.maintenance_git_sync_config
+    - script.maintenance_git_pull_config
+    from: 'on'
+    to: 'off'
+    platform: state
+  condition: []
+  action:
+  - action: homeassistant.reload_core_config
+  - action: automation.reload
+  - action: script.reload
+  - action: scene.reload
+  mode: single
+
+- id: '1767772690727'
+  alias: '[Maintenance] Git Sync Hourly'
+  description: 'Run the full HA-hosted reconcile flow every hour'
+  trigger:
+  - hours: '*'
+    minutes: 0
+    platform: time_pattern
+  condition: []
+  action:
+  - target:
+      entity_id: script.maintenance_git_sync_config
+    action: script.turn_on
+  mode: single
+
+- id: '1767773315131'
+  alias: '[Maintenance] Publish Git Config After UI-backed Changes'
+  description: 'Debounced full sync whenever Lovelace or YAML-backed config is reloaded from the HA UI'
+  trigger:
+  - event_type: lovelace_updated
+    platform: event
+  - event_type: call_service
+    event_data:
+      domain: automation
+      service: reload
+    platform: event
+  - event_type: call_service
+    event_data:
+      domain: script
+      service: reload
+    platform: event
+  - event_type: call_service
+    event_data:
+      domain: scene
+      service: reload
+    platform: event
+  - event_type: call_service
+    event_data:
+      domain: homeassistant
+      service: reload_core_config
+    platform: event
+  condition:
+  - condition: template
+    value_template: >-
+      {{ trigger.event.event_type == 'lovelace_updated'
+         or trigger.event.context.user_id is not none }}
+  action:
+  - target:
+      entity_id: script.maintenance_git_push_config
+    action: script.turn_on
+  mode: single
+
+- id: '1772117850002'
+  alias: '[Maintenance] Nightly Config Backup'
+  description: 'Commit with dated message and push at 03:00 every night'
+  trigger:
+  - at: '03:00:00'
+    trigger: time
+  condition: []
+  action:
+  - action: shell_command.git_nightly_backup
+  mode: single
+
+- id: '1772117850003'
+  alias: '[Maintenance] Weekly Config Snapshot'
+  description: 'Create a tar.gz snapshot every Sunday at 02:30'
+  trigger:
+  - at: '02:30:00'
+    trigger: time
+  condition:
+  - condition: time
+    weekday:
+    - sun
+  action:
+  - action: shell_command.git_weekly_snapshot
+  mode: single
+
+- id: '1772117850004'
+  alias: '[Maintenance] Monthly Backup Tag Cleanup'
+  description: 'Prune backup/nightly-* tags older than 30 days on the 1st'
+  trigger:
+  - at: '04:00:00'
+    trigger: time
+  condition:
+  - condition: template
+    value_template: "{{ now().day == 1 }}"
+  action:
+  - action: shell_command.git_cleanup_backups
+  mode: single
+
+- id: '1772117850005'
+  alias: '[Maintenance] Install Git Hooks On Startup'
+  description: 'Ensure commit-msg, pre-push, and post-merge hooks are active after every HA restart'
+  trigger:
+  - trigger: homeassistant
+    event: start
+  condition: []
+  action:
+  - action: shell_command.install_git_hooks
+  mode: single
+
+# Webhook-triggered sync: fired by notify-ha.yml GitHub Actions workflow
+# on every push/merge to main that did NOT originate from HA itself.
+#
+# SECRETS REQUIRED
+# ----------------
+# 1. Add to /config/secrets.yaml:
+#      git_sync_webhook_id: "your-unique-webhook-id-here"
+#    Generate a strong value:
+#      python3 -c "import secrets; print(secrets.token_urlsafe(32))"
+#
+# 2. Add HA_WEBHOOK_URL as a GitHub Actions secret in your repo settings:
+#      https://<your-ha-url>/api/webhook/<git_sync_webhook_id>
+#
+# 3. Ensure your HA instance is reachable from the internet
+#    (Nabu Casa, Cloudflare Tunnel, or reverse proxy with TLS).
+- id: 'maintenance_git_pull_on_github_webhook'
+  alias: '[Maintenance] Git Sync on GitHub Webhook'
+  description: "Tags: Maintenance, Git, Sync, Webhook - Pulls latest config from GitHub when notify-ha.yml fires. Source must be github-actions."
+  trigger:
+  - trigger: webhook
+    webhook_id: !secret git_sync_webhook_id
+    allowed_methods:
+      - POST
+    local_only: false
+  condition:
+  - condition: template
+    value_template: "{{ trigger.json.source | default('') == 'github-actions' }}"
+  action:
+  - target:
+      entity_id: script.maintenance_git_pull_config
+    action: script.turn_on
+  mode: single

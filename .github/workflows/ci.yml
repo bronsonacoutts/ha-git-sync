@@ -1,5 +1,7 @@
 name: CI
 
+# Runs on direct pushes and on pull requests so HA-hosted sync branches still
+# receive the same policy and lint coverage before they merge into main.
 on:
   push:
     branches:
@@ -30,7 +32,7 @@ jobs:
       - name: Run shellcheck
         run: |
           set -euo pipefail
-          find scripts -type f \( -name "*.sh" -o -path "scripts/git_hooks/*" \) -print0 | xargs -0 shellcheck
+          find scripts -type f \( -name "*.sh" -o -path "scripts/git_hooks/*" \) -print0 | xargs -0 shellcheck -x
 
       - name: Job summary
         if: always()
@@ -38,7 +40,7 @@ jobs:
           {
             echo "## CI / shellcheck"
             echo "- Checked shell scripts under scripts/ and git hooks."
-            echo "- Use local command: shellcheck scripts/*.sh scripts/git_hooks/*"
+            echo "- Use local command: shellcheck -x scripts/*.sh scripts/git_hooks/*"
           } >> "$GITHUB_STEP_SUMMARY"
 
   yamllint:

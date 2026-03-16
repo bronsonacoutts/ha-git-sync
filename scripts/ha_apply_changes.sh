@@ -14,7 +14,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="${HA_CONFIG_DIR:-$(git -C "${SCRIPT_DIR}/.." rev-parse --show-toplevel 2>/dev/null || echo /config)}"
 export HA_CONFIG_DIR="${REPO_ROOT}"
 
-# shellcheck source=./git_runtime.sh
+# shellcheck source=scripts/git_runtime.sh
 . "${SCRIPT_DIR}/git_runtime.sh"
 
 BEFORE_REF="${1:-}"
@@ -114,7 +114,7 @@ while IFS= read -r file; do
     [[ -n "$file" ]] || continue
 
     case "$file" in
-        .github/*|docs/*|examples/*|gh-backup/*|hooks/*|pulls/*|tests/*|README.md|*.md|LICENSE|SECURITY.md|SUPPORT.md|CODE_OF_CONDUCT.md|CONTRIBUTING.md|.gitignore|.gitconfig.example|configuration.yaml.example|*.example|scripts/*|.ssh/*)
+        .github/*|docs/*|examples/*|gh-backup/*|hooks/*|pulls/*|tests/*|*.md|LICENSE|.gitignore|*.example|scripts/*|.ssh/*)
             continue
             ;;
     esac

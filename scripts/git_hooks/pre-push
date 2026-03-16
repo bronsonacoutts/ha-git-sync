@@ -6,7 +6,7 @@
 # pushes are always allowed.
 #
 # To push a quick fix directly to main (emergency only), run:
-#   HA_GIT_AUTOMATED=1 git push origin main
+#   HA_GIT_AUTOMATED=1 git push origin HEAD:main
 
 while read -r _local_ref local_sha remote_ref _remote_sha; do
     # Only enforce the rule on pushes targeting main

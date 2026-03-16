@@ -7,40 +7,45 @@
 # Do not remove or change the id values — HA uses them to track automations
 # across restarts and UI edits.
 
-- alias: "[Maintenance] Git Pull on GitHub Webhook"
-  id: 'maintenance_git_pull_on_github_webhook'
-  description: "Pulls latest config from GitHub when notify-ha.yml fires. Source must be github-actions."
+- alias: "[Maintenance] Reload Automations After Git Sync"
+  id: '1767772677262'
+  description: "Tags: Maintenance, Git, Reload - Reload YAML-managed config after GitHub-originated changes are applied on the HA box."
   trigger:
-  - platform: webhook
-    webhook_id: !secret git_sync_webhook_id
-    allowed_methods:
-      - POST
-    local_only: false
-  condition:
-  - condition: template
-    value_template: "{{ trigger.json.source | default('') == 'github-actions' }}"
+  - platform: state
+    entity_id:
+    - script.maintenance_git_sync_config
+    - script.maintenance_git_pull_config
+    from: "on"
+    to: "off"
+  condition: []
   action:
-  - action: shell_command.git_pull
-    response_variable: pull_result
-  - choose:
-    - conditions:
-      - condition: template
-        value_template: "{{ pull_result.return_code == 0 }}"
-      sequence:
-      - action: persistent_notification.create
-        data:
-          title: "✅ Git Sync"
-          message: "Config pulled from GitHub successfully ({{ trigger.json.sha[:7] | default('unknown') }})."
-    default:
-    - action: persistent_notification.create
-      data:
-        title: "❌ Git Sync Failed"
-        message: "Git pull failed (exit {{ pull_result.return_code }}). Check HA logs."
+  - action: homeassistant.reload_core_config
+    data: {}
+  - action: automation.reload
+    data: {}
+  - action: script.reload
+    data: {}
+  - action: scene.reload
+    data: {}
   mode: single
 
-- alias: "[Maintenance] Push Git Config After UI-backed Changes"
+- alias: "[Maintenance] Git Sync Hourly"
+  id: '1767772690727'
+  description: "Tags: Maintenance, Git, Sync, Schedule - Full HA-hosted reconcile every hour."
+  trigger:
+  - platform: time_pattern
+    hours: "*"
+    minutes: 0
+  condition: []
+  action:
+  - target:
+      entity_id: script.maintenance_git_sync_config
+    action: script.turn_on
+  mode: single
+
+- alias: "[Maintenance] Publish Git Config After UI-backed Changes"
   id: '1767773315131'
-  description: "Tags: Maintenance, Git, Push, UI - Debounced publish after dashboard or YAML reload activity initiated from the HA UI."
+  description: "Tags: Maintenance, Git, Publish, UI - Debounced publish after dashboard or YAML reload activity initiated from the HA UI."
   trigger:
   - platform: event
     event_type: lovelace_updated
@@ -70,21 +75,9 @@
       {{ trigger.event.event_type == 'lovelace_updated'
          or trigger.event.context.user_id is not none }}
   action:
-  - action: script.maintenance_git_push_config
-  mode: single
-
-- alias: "[Maintenance] Reload Automations After Git Sync"
-  id: '1767772677262'
-  description: "Reload automations after the git sync script (pull + push) completes."
-  trigger:
-  - platform: state
-    entity_id: script.maintenance_git_sync_config
-    from: "on"
-    to: "off"
-  condition: []
-  action:
-  - action: automation.reload
-    data: {}
+  - target:
+      entity_id: script.maintenance_git_push_config
+    action: script.turn_on
   mode: single
 
 - alias: "[Maintenance] Nightly Config Backup"
@@ -192,7 +185,7 @@
 #    (Nabu Casa, Cloudflare Tunnel, or reverse proxy with TLS).
 - alias: "[Maintenance] Git Pull on GitHub Webhook"
   id: 'maintenance_git_pull_on_github_webhook'
-  description: "Tags: Maintenance, Git, Pull, Webhook — Pulls latest config from GitHub when notify-ha.yml fires. Skips if webhook payload contains source == 'home-assistant' (set that value in any HA-originated webhook call to prevent push→pull loops)."
+  description: "Tags: Maintenance, Git, Pull, Webhook - Pulls latest config from GitHub when notify-ha.yml fires. Source must be github-actions."
   trigger:
   - platform: webhook
     webhook_id: !secret git_sync_webhook_id
@@ -200,11 +193,10 @@
       - POST
     local_only: false
   condition:
-  # Skip the pull only when the caller sends source == 'home-assistant'.
-  # Calls from notify-ha.yml carry source == 'github-actions' and pass through.
   - condition: template
-    value_template: "{{ trigger.json.source | default('') != 'home-assistant' }}"
+    value_template: "{{ trigger.json.source | default('') == 'github-actions' }}"
   action:
-  - action: shell_command.git_pull
-  mode: queued
-  max: 2
+  - target:
+      entity_id: script.maintenance_git_pull_config
+    action: script.turn_on
+  mode: single
