@@ -16,7 +16,8 @@ maintenance_git_push_config:
     Debounced HA-to-GitHub publish: waits for a 3-minute quiet window after the
     last UI-backed config change, then runs the full reconcile flow. mode:
     restart resets the timer on every new trigger so rapid edits are batched.
-    Skips the sync if one already completed within the last 2 minutes.
+    Skips starting a new sync if one has started or completed within the last 2 minutes
+    (including when a sync is currently running).
   sequence:
     - condition: template
       value_template: >-
