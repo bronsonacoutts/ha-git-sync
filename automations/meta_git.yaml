@@ -35,13 +35,37 @@
     action: script.turn_on
   mode: single
 
-- alias: "[Maintenance] Push Git Config After UI Changes (lovelace_updated)"
+- alias: "[Maintenance] Publish Git Config After UI-backed Changes"
   id: '1767773315131'
-  description: "Tags: Maintenance, Git, Push, UI"
+  description: "Tags: Maintenance, Git, Publish, UI - Debounced publish after dashboard or YAML reload activity initiated from the HA UI."
   trigger:
   - platform: event
     event_type: lovelace_updated
-  condition: []
+  - platform: event
+    event_type: call_service
+    event_data:
+      domain: automation
+      service: reload
+  - platform: event
+    event_type: call_service
+    event_data:
+      domain: script
+      service: reload
+  - platform: event
+    event_type: call_service
+    event_data:
+      domain: scene
+      service: reload
+  - platform: event
+    event_type: call_service
+    event_data:
+      domain: homeassistant
+      service: reload_core_config
+  condition:
+  - condition: template
+    value_template: >-
+      {{ trigger.event.event_type == 'lovelace_updated'
+         or trigger.event.context.user_id is not none }}
   action:
   - target:
       entity_id: script.maintenance_git_push_config
@@ -132,4 +156,5 @@
     value_template: "{{ trigger.json.source | default('') != 'home-assistant' }}"
   action:
   - action: shell_command.git_pull
-  mode: single
+  mode: queued
+  max: 2

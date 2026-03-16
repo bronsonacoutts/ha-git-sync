@@ -11,12 +11,16 @@ maintenance_git_sync_config:
   mode: single
 
 maintenance_git_push_config:
-  alias: "[Maintenance] Git Push Config"
+  alias: "[Maintenance] Git Publish Config"
   description: >-
-    Debounced full sync: waits for a 3-minute quiet window after the last UI
-    change, then reconciles local and remote changes in one run. mode: restart
-    resets the timer on every new trigger so rapid edits are batched.
+    Debounced HA-to-GitHub publish: waits for a 3-minute quiet window after the
+    last UI-backed config change, then runs the full reconcile flow. mode:
+    restart resets the timer on every new trigger so rapid edits are batched.
+    Skips the sync if one already completed within the last 2 minutes.
   sequence:
+    - condition: template
+      value_template: >-
+        {{ (now() - states.script.maintenance_git_sync_config.last_changed).total_seconds() > 120 }}
     - delay: "00:03:00"
     - service: script.maintenance_git_sync_config
   mode: restart
