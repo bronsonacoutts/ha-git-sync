@@ -180,7 +180,7 @@ All scripts read configuration from environment variables with sensible defaults
 | `GITHUB_SYNC_MODE` | `pull-request` | `pull-request` keeps PR checks/policies in front of `main`; `direct` preserves legacy push-to-main behavior |
 | `GITHUB_API_TOKEN` | *(empty)* | Required in `pull-request` mode so the HA host can create/update/merge sync PRs |
 | `GITHUB_SYNC_BRANCH_PREFIX` | `ha-sync` | Prefix for HA-hosted sync branches |
-| `GITHUB_SYNC_MARKER` | `[ha-sync]` | Commit/PR marker used to suppress webhook pull-backs on HA-originated merges |
+| `GITHUB_SYNC_MARKER` | `[ha-sync]` | Commit/PR marker used to suppress webhook pull-backs on HA-originated merges; if you change this value, you must also update the loop-prevention condition in your GitHub Actions workflow (for example, `.github/workflows/notify-ha.yml`) to match |
 | `GITHUB_SYNC_POLL_INTERVAL_SEC` | `15` | Seconds between GitHub PR state checks |
 | `GITHUB_SYNC_POLL_TIMEOUT_SEC` | `900` | Max seconds to wait for checks/rules before failing the HA-hosted publish |
 | `GIT_SYNC_LOCK_WAIT_SEC` | `180` | Max seconds to wait for sync lock |
