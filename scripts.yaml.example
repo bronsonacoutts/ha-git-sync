@@ -3,13 +3,6 @@
 # Add this to your /config/scripts.yaml (create the file if it doesn't exist).
 # Ensure configuration.yaml contains:  script: !include scripts.yaml
 
-maintenance_git_sync_config:
-  alias: "[Maintenance] Git Sync Config"
-  description: "Run a full reconcile between Home Assistant and origin"
-  sequence:
-    - service: shell_command.git_sync
-  mode: single
-
 maintenance_git_push_config:
   alias: "[Maintenance] Git Publish Config"
   description: >-
@@ -23,19 +16,13 @@ maintenance_git_push_config:
       value_template: >-
         {{ (now() - states.script.maintenance_git_sync_config.last_changed).total_seconds() > 120 }}
     - delay: "00:03:00"
-    - service: script.maintenance_git_sync_config
+    - action: shell_command.git_push
   mode: restart
 
-maintenance_git_status:
-  alias: "[Maintenance] Git Status"
-  description: "Check git status of config directory"
+maintenance_git_sync_config:
+  alias: "[Maintenance] Git Sync Config"
+  description: "Pull then push — used by the reload automation trigger."
   sequence:
-    - service: shell_command.git_status
-  mode: single
-
-maintenance_fix_automation_aliases:
-  alias: "[Maintenance] Fix Automation Aliases"
-  description: "Optional: normalize automation aliases to [Area] Action (Trigger/Context) format"
-  sequence:
-    - service: shell_command.fix_automation_aliases
+    - action: shell_command.git_pull
+    - action: shell_command.git_push
   mode: single

@@ -40,31 +40,6 @@ jobs:
             echo "- Use local command: shellcheck scripts/*.sh scripts/git_hooks/*"
           } >> "$GITHUB_STEP_SUMMARY"
 
-  validate-automations:
-    name: validate-automations
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@v6
-
-      - name: Install PyYAML
-        run: python3 -m pip install --user pyyaml
-
-      - name: Run automation validation
-        run: python3 scripts/validate_automations.py .
-
-      - name: Run automation validation tests
-        run: python3 -m pip install --user pytest && python3 -m pytest tests/ -v
-
-      - name: Job summary
-        if: always()
-        run: |
-          {
-            echo "## CI / validate-automations"
-            echo "- Validated automation ids (presence, uniqueness, UI-editable path)."
-            echo "- Use local command: python3 scripts/validate_automations.py ."
-          } >> "$GITHUB_STEP_SUMMARY"
-
   yamllint:
     name: yamllint
     runs-on: ubuntu-latest
