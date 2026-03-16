@@ -63,7 +63,7 @@ How to read this: local HA changes and repo changes converge through sync jobs; 
 5. **Run first sync safely**
    - Run `scripts/git_status.sh`, then `scripts/git_sync.sh` from `/config`.
 6. **Verify checks pass**
-   - In GitHub, confirm `CI / shellcheck`, `CI / yamllint`, `CI / validate-automations`, and `CodeQL` are green.
+   - In GitHub, confirm `CI / shellcheck`, `CI / yamllint`, and `CodeQL` are green.
 7. **Install hooks**
    - Run `scripts/install_git_hooks.sh` so `post-merge` can reload HA config or request a restart after merges.
 
