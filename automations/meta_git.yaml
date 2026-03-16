@@ -155,6 +155,17 @@
   - action: shell_command.git_cleanup_backups
   mode: single
 
+- alias: "[Maintenance] Install Git Hooks On Startup"
+  id: '1772117850005'
+  description: "Ensure commit-msg, pre-push, and post-merge hooks stay installed after every HA restart."
+  trigger:
+  - platform: homeassistant
+    event: start
+  condition: []
+  action:
+  - action: shell_command.install_git_hooks
+  mode: single
+
 # Webhook-triggered pull: fired by notify-ha.yml GitHub Actions workflow
 # on every push/merge to main.
 #
