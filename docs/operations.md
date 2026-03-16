@@ -18,6 +18,10 @@ bash scripts/git_status.sh
 bash scripts/git_push.sh
 ```
 
+After each successful merge on the HA box, the installed `post-merge` hook runs
+`scripts/ha_apply_changes.sh` to reload Home Assistant configuration or request
+a full restart when the merged files require it.
+
 ## Recovery after failed sync job
 
 1. Capture current state:
