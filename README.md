@@ -23,17 +23,11 @@ scripts/                    # Core sync engine (bash)
 ├── git_weekly_snapshot.sh  #   Create tar.gz snapshot + immutable weekly tag
 ├── git_cleanup_backups.sh  #   Prune backup tags older than N days
 ├── github_pr_sync.py       #   GitHub API helper for HA-hosted PR create/wait/merge
+├── ha_apply_changes.sh     #   Reload/restart HA after merged runtime changes
 ├── install_git_hooks.sh    #   Install commit-msg and pre-push hooks
-├── git-to-ha.sh            #   Compatibility wrapper → git_pull.sh
-├── ha-to-git.sh            #   Compatibility wrapper → git_push.sh
 ├── git_hooks/              #   Git hook scripts
 │   ├── commit-msg          #     Reject empty/placeholder commit messages
 │   └── pre-push            #     Block accidental direct pushes to main
-├── validate_automations.py #   Validate automation IDs and paths
-├── migrate_automations.py  #   Add deterministic IDs to existing automations
-├── fix_automation_aliases.py   # Optional: normalize automation alias format
-├── fix_automation_aliases.sh   # Shell wrapper for alias fixer
-└── migrate_automations.sh  #   Shell wrapper for migration script
 
 automations/                # Ready-to-use HA automations
 └── meta_git.yaml           #   Hourly sync, push-on-UI-change, nightly backup,
@@ -42,13 +36,11 @@ automations/                # Ready-to-use HA automations
 configuration.yaml.example  # HA config snippet (shell commands + automation include)
 scripts.yaml.example        # HA scripts with debounced push (3-min quiet window)
 automations.yaml.example    # Alternative: inline automations format
-.gitignore                  # Excludes secrets, databases, logs, caches
 .gitignore.example          # Template for users to copy into their own repos
 
 docs/                       # Setup guides, operations runbook, troubleshooting
-tests/                      # Pytest suite for Python validation/migration scripts
+tests/                      # Pytest suite for HA-hosted PR sync helper
 hooks/                      # Post-merge template + sync lifecycle extension hooks
-examples/                   # Additional example configurations
 ```
 
 ## How it works
@@ -68,7 +60,8 @@ flowchart LR
 3. **Merge** → `git merge -X ours` (local HA changes always win conflicts)
 4. **Publish from HA** → push `ha-sync/<host>` branch, open/update PR, wait for CI, merge to `origin/main`
 5. **Fast-forward local main** → HA updates itself to the GitHub merge commit
-6. **Notify** → optional Home Assistant notification on failure only
+6. **Apply on HA** → installed `post-merge` hook runs `scripts/ha_apply_changes.sh`
+7. **Notify** → optional Home Assistant notification on failure only
 
 **Concurrency safety:** All operations acquire a directory-based lock (`.git/ha-git-sync.lock`) before touching git. Stale locks are auto-removed after 10 minutes. Only one sync job runs at a time.
 
@@ -148,16 +141,10 @@ For near-real-time sync when changes are pushed to GitHub from other sources:
 bash scripts/install_git_hooks.sh
 ```
 
-### Step 6: Migrate existing automations (first install only)
+This keeps `commit-msg`, `pre-push`, and `post-merge` active so merges on the
+HA host can automatically reload or restart Home Assistant when needed.
 
-If you have existing automations without `id` fields:
-
-```bash
-python3 scripts/migrate_automations.py /config
-python3 scripts/validate_automations.py /config   # verify
-```
-
-### Step 7: First sync
+### Step 6: First sync
 
 ```bash
 bash scripts/git_status.sh    # check current state
@@ -176,7 +163,7 @@ All scripts read configuration from environment variables with sensible defaults
 | `GIT_BRANCH` | `main` | Branch to sync with |
 | `GIT_USER_NAME` | `ha-git-sync` | Git commit author name |
 | `GIT_USER_EMAIL` | `ha-git-sync@localhost` | Git commit author email |
-| `HA_NOTIFY_URL` | *(empty — disabled)* | HA webhook URL for failure notifications |
+| `HA_NOTIFY_URL` | `http://localhost:8123/api/services/persistent_notification/create` | HA API endpoint for failure notifications; used only when `SUPERVISOR_TOKEN` or `HA_NOTIFY_TOKEN` is available |
 | `GITHUB_SYNC_MODE` | `pull-request` | `pull-request` keeps PR checks/policies in front of `main`; `direct` preserves legacy push-to-main behavior |
 | `GITHUB_API_TOKEN` | *(empty)* | Required in `pull-request` mode so the HA host can create/update/merge sync PRs |
 | `GITHUB_SYNC_BRANCH_PREFIX` | `ha-sync` | Prefix for HA-hosted sync branches |
@@ -197,9 +184,10 @@ The included `automations/meta_git.yaml` provides:
 | Hourly sync | Every hour at :00 | Full HA-hosted reconcile and publish |
 | Publish on UI-backed change | `lovelace_updated` plus UI-initiated YAML reload events | Debounced publish (3-min quiet window via script) |
 | Reload after sync/pull | Sync or pull script completes | Reloads YAML-managed config after GitHub-originated changes land locally |
-| Pre-edit sync | `input_boolean.maintenance_major_changes` on | Sync before making big changes |
 | Nightly backup | 03:00 daily | Sync + create `backup/nightly-YYYY-MM-DD` tag |
 | Weekly snapshot | 02:30 Sunday | Create tar.gz archive + immutable `snapshot/weekly-YYYY.WW` tag |
+| Monthly cleanup | 04:00 on day 1 | Prune old nightly backup tags |
+| Install hooks on startup | Home Assistant start | Reinstall commit-msg, pre-push, and post-merge hooks |
 | Webhook pull | GitHub webhook POST | Pull latest when GitHub notifies of an external push to `main` |
 
 ## Extension hooks
@@ -227,13 +215,10 @@ All sync scripts use `git merge -X ours`. In merge conflicts, **local Home Assis
 
 ## Automation ID policy
 
-Every automation **must** have a stable, unique `id` field for HA UI editing to work. The included `validate_automations.py` enforces this in CI and locally:
-
-```bash
-python3 scripts/validate_automations.py /config
-```
-
-Use 13-digit Unix millisecond timestamps (e.g., `'1767772677262'`). Run `migrate_automations.py` once to add IDs to existing automations.
+Every automation **must** have a stable, unique `id` field for HA UI editing to work.
+The included examples already provide fixed IDs; if you adapt them, keep each ID
+stable and unique so Home Assistant can continue mapping UI edits back to the
+same tracked file entry.
 
 ## Security model
 
@@ -242,6 +227,7 @@ Use 13-digit Unix millisecond timestamps (e.g., `'1767772677262'`). Run `migrate
 - **Webhook authentication:** Webhook IDs use `!secret` indirection — never hardcoded.
 - **Git hooks:** Block accidental commits of placeholder messages and direct pushes to `main`.
 - **Notifications:** Optional, best-effort. Failure notifications via HA webhook; no secrets in payloads.
+- **Post-merge apply:** Reload or restart behavior lives in `scripts/ha_apply_changes.sh` and only runs when the `post-merge` hook is installed on the HA host.
 
 See [docs/security.md](docs/security.md) and [SECURITY.md](SECURITY.md) for full details.
 

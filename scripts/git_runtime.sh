@@ -6,7 +6,7 @@ REPO_DIR="${HA_CONFIG_DIR:-/config}"
 GIT_BRANCH="${GIT_BRANCH:-main}"
 GIT_USER_NAME="${GIT_USER_NAME:-ha-git-sync}"
 GIT_USER_EMAIL="${GIT_USER_EMAIL:-ha-git-sync@localhost}"
-HA_NOTIFY_URL="${HA_NOTIFY_URL:-}"
+HA_NOTIFY_URL="${HA_NOTIFY_URL:-http://localhost:8123/api/services/persistent_notification/create}"
 GITHUB_API_URL="${GITHUB_API_URL:-https://api.github.com}"
 GITHUB_API_TOKEN="${GITHUB_API_TOKEN:-${GH_TOKEN:-${GITHUB_TOKEN:-}}}"
 GITHUB_SYNC_MODE="${GITHUB_SYNC_MODE:-pull-request}"
@@ -22,14 +22,26 @@ GIT_SYNC_LOCK_STALE_SEC="${GIT_SYNC_LOCK_STALE_SEC:-600}"
 ha_notify() {
     local title="$1"
     local message="$2"
+    local payload
+    local -a auth_args=()
 
-    if [ -z "$HA_NOTIFY_URL" ]; then
+    if ! command -v curl >/dev/null 2>&1 || ! command -v jq >/dev/null 2>&1; then
         return 0
     fi
 
-    curl -sf --max-time 10 -X POST "$HA_NOTIFY_URL" \
+    if [[ -n "${SUPERVISOR_TOKEN:-}" ]]; then
+        auth_args=(-H "Authorization: Bearer ${SUPERVISOR_TOKEN}")
+    elif [[ -n "${HA_NOTIFY_TOKEN:-}" ]]; then
+        auth_args=(-H "Authorization: Bearer ${HA_NOTIFY_TOKEN}")
+    else
+        return 0
+    fi
+
+    payload="$(jq -n --arg title "$title" --arg message "$message" '{title:$title,message:$message}')" || return 0
+    curl -sf --connect-timeout 5 --max-time 10 -X POST "$HA_NOTIFY_URL" \
+        "${auth_args[@]}" \
         -H "Content-Type: application/json" \
-        -d "{\"title\":\"$title\",\"message\":\"$message\"}" \
+        -d "$payload" \
         || true
 }
 

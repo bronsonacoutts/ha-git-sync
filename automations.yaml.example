@@ -121,29 +121,13 @@
 
 - id: '1772117850005'
   alias: '[Maintenance] Install Git Hooks On Startup'
-  description: 'Ensure commit-msg and pre-push hooks are active after every HA restart'
+  description: 'Ensure commit-msg, pre-push, and post-merge hooks are active after every HA restart'
   trigger:
   - trigger: homeassistant
     event: start
   condition: []
   action:
   - action: shell_command.install_git_hooks
-  mode: single
-
-- id: '1772117850006'
-  alias: '[Maintenance] Optional Alias Auto-Correction Weekly'
-  description: 'Optional: normalize automation aliases weekly before backup'
-  trigger:
-  - at: '01:45:00'
-    trigger: time
-  condition:
-  - condition: time
-    weekday:
-    - sun
-  action:
-  - target:
-      entity_id: script.maintenance_fix_automation_aliases
-    action: script.turn_on
   mode: single
 
 # Webhook-triggered sync: fired by notify-ha.yml GitHub Actions workflow
@@ -163,7 +147,7 @@
 #    (Nabu Casa, Cloudflare Tunnel, or reverse proxy with TLS).
 - id: 'maintenance_git_pull_on_github_webhook'
   alias: '[Maintenance] Git Sync on GitHub Webhook'
-  description: "Tags: Maintenance, Git, Sync, Webhook - Pulls external origin/main updates into HA when notify-ha.yml fires. HA-originated sync merges are filtered before the webhook is sent."
+  description: "Tags: Maintenance, Git, Sync, Webhook - Pulls latest config from GitHub when notify-ha.yml fires. Source must be github-actions."
   trigger:
   - trigger: webhook
     webhook_id: !secret git_sync_webhook_id
@@ -172,7 +156,7 @@
     local_only: false
   condition:
   - condition: template
-    value_template: "{{ trigger.json.source | default('') != 'home-assistant' }}"
+    value_template: "{{ trigger.json.source | default('') == 'github-actions' }}"
   action:
   - target:
       entity_id: script.maintenance_git_pull_config

@@ -80,36 +80,35 @@
     action: script.turn_on
   mode: single
 
-- alias: "[Maintenance] Git Sync Before Major Changes"
-  id: '1772117850001'
-  description: "Tags: Maintenance, Git, Sync, Pre-Edit"
-  trigger:
-  - platform: state
-    entity_id: input_boolean.maintenance_major_changes
-    to: "on"
-  condition: []
-  action:
-  - target:
-      entity_id: script.maintenance_git_sync_config
-    action: script.turn_on
-  mode: single
-
-# Nightly backup of /config to GitHub
 - alias: "[Maintenance] Nightly Config Backup"
   id: '1772117850002'
-  description: "Tags: Maintenance, Git, Backup, Schedule"
+  description: "Commit and tag nightly backup at 03:00."
   trigger:
   - platform: time
     at: "03:00:00"
   condition: []
   action:
   - action: shell_command.git_nightly_backup
+    response_variable: backup_result
+  - choose:
+    - conditions:
+      - condition: template
+        value_template: "{{ backup_result.return_code == 0 }}"
+      sequence:
+      - action: persistent_notification.create
+        data:
+          title: "✅ Nightly Backup"
+          message: "Nightly config backup completed."
+    default:
+    - action: persistent_notification.create
+      data:
+        title: "❌ Nightly Backup Failed"
+        message: "Nightly backup failed (exit {{ backup_result.return_code }}). Check HA logs."
   mode: single
 
-# Weekly full config snapshot (tar.gz) committed to repo
 - alias: "[Maintenance] Weekly Config Snapshot"
   id: '1772117850003'
-  description: "Tags: Maintenance, Git, Snapshot, Schedule"
+  description: "Create tar.gz snapshot every Sunday at 02:30."
   trigger:
   - platform: time
     at: "02:30:00"
@@ -119,6 +118,45 @@
     - sun
   action:
   - action: shell_command.git_weekly_snapshot
+    response_variable: snap_result
+  - choose:
+    - conditions:
+      - condition: template
+        value_template: "{{ snap_result.return_code == 0 }}"
+      sequence:
+      - action: persistent_notification.create
+        data:
+          title: "✅ Weekly Snapshot"
+          message: "Weekly config snapshot completed."
+    default:
+    - action: persistent_notification.create
+      data:
+        title: "❌ Weekly Snapshot Failed"
+        message: "Weekly snapshot failed (exit {{ snap_result.return_code }}). Check HA logs."
+  mode: single
+
+- alias: "[Maintenance] Monthly Backup Tag Cleanup"
+  id: '1772117850004'
+  description: "Prune backup/nightly-* tags older than 30 days on the 1st of each month."
+  trigger:
+  - platform: time
+    at: "04:00:00"
+  condition:
+  - condition: template
+    value_template: "{{ now().day == 1 }}"
+  action:
+  - action: shell_command.git_cleanup_backups
+  mode: single
+
+- alias: "[Maintenance] Install Git Hooks On Startup"
+  id: '1772117850005'
+  description: "Ensure commit-msg, pre-push, and post-merge hooks stay installed after every HA restart."
+  trigger:
+  - platform: homeassistant
+    event: start
+  condition: []
+  action:
+  - action: shell_command.install_git_hooks
   mode: single
 
 # Webhook-triggered pull: fired by notify-ha.yml GitHub Actions workflow
@@ -147,7 +185,7 @@
 #    (Nabu Casa, Cloudflare Tunnel, or reverse proxy with TLS).
 - alias: "[Maintenance] Git Pull on GitHub Webhook"
   id: 'maintenance_git_pull_on_github_webhook'
-  description: "Tags: Maintenance, Git, Pull, Webhook - Pulls external main-branch changes from GitHub. HA-originated sync merges are filtered out before this webhook is sent."
+  description: "Tags: Maintenance, Git, Pull, Webhook - Pulls latest config from GitHub when notify-ha.yml fires. Source must be github-actions."
   trigger:
   - platform: webhook
     webhook_id: !secret git_sync_webhook_id
@@ -155,10 +193,8 @@
       - POST
     local_only: false
   condition:
-  # Skip the pull only when the caller sends source == 'home-assistant'.
-  # Calls from notify-ha.yml carry source == 'github-actions' and pass through.
   - condition: template
-    value_template: "{{ trigger.json.source | default('') != 'home-assistant' }}"
+    value_template: "{{ trigger.json.source | default('') == 'github-actions' }}"
   action:
   - target:
       entity_id: script.maintenance_git_pull_config

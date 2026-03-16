@@ -18,6 +18,16 @@ To check status manually:
 bash scripts/git_status.sh
 ```
 
+To publish local HA changes on demand:
+
+```bash
+bash scripts/git_push.sh
+```
+
+After each successful merge on the HA box, the installed `post-merge` hook runs
+`scripts/ha_apply_changes.sh` to reload Home Assistant configuration or request
+a full restart when the merged files require it.
+
 ## Recovery after failed sync job
 
 1. Check what went wrong:

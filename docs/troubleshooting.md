@@ -64,8 +64,16 @@ Use this index by symptom. Each section lists likely cause and concrete fix step
 
 **Fix**
 1. Run `bash scripts/install_git_hooks.sh`.
-2. Confirm `.git/hooks/commit-msg` and `.git/hooks/pre-push` exist and executable.
+2. Confirm `.git/hooks/commit-msg`, `.git/hooks/pre-push`, and `.git/hooks/post-merge` exist and are executable.
 3. For sync lifecycle hooks, confirm your script lives in `hooks/*.d/` and is executable.
+
+## Home Assistant did not reload or restart after merge
+
+**Fix**
+1. Run `bash scripts/install_git_hooks.sh`.
+2. Confirm `/config/scripts/ha_apply_changes.sh` exists and is executable.
+3. If the HA CLI is unavailable, set `HA_NOTIFY_TOKEN` or `SUPERVISOR_TOKEN` so the REST fallback can trigger reloads or restarts.
+4. Re-run `git pull` and check the HA add-on logs for `[ha-git-sync]` messages.
 
 ## Local branch is detached
 

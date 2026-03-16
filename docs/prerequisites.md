@@ -8,7 +8,8 @@ This page lists everything you need before setting up ha-git-sync.
 |---|---|
 | **git** | Must be installed on the HA host. The [Advanced SSH & Web Terminal](https://github.com/hassio-addons/addon-ssh) addon includes git. Alternatively, install the [Git](https://github.com/home-assistant/addons/tree/master/git) addon. |
 | **bash** | Required by the sync scripts. Available by default in all standard HA addon environments. |
-| **curl** | Required if you use the REST API reload option in `hooks/post-merge`. Available in most HA addon terminals. |
+| **curl** | Required if you use the REST API fallback in `scripts/ha_apply_changes.sh`. Available in most HA addon terminals. |
+| **Home Assistant CLI (`ha`)** | Strongly recommended. It lets `ha_apply_changes.sh` reload or restart HA directly after a merge. |
 | **Internet access** | The HA host must be able to reach `github.com` on port 443 (HTTPS) or port 22 (SSH). |
 
 ## Git repository setup
@@ -58,16 +59,16 @@ deploy key or a dedicated SSH key without a passphrase.
    Host github.com
        IdentityFile /root/.ssh/ha_git_sync_ed25519
        IdentitiesOnly yes
-         StrictHostKeyChecking yes
-         UserKnownHostsFile /root/.ssh/known_hosts
+       StrictHostKeyChecking yes
+       UserKnownHostsFile /root/.ssh/known_hosts
    ```
 
-      Then seed known hosts:
+   Then seed known hosts:
 
-      ```bash
-      ssh-keyscan -t ed25519 github.com >> /root/.ssh/known_hosts
-      chmod 644 /root/.ssh/known_hosts
-      ```
+   ```bash
+   ssh-keyscan -t ed25519 github.com >> /root/.ssh/known_hosts
+   chmod 644 /root/.ssh/known_hosts
+   ```
 
 4. **Test the connection**:
 
@@ -108,6 +109,30 @@ The GitHub Actions webhook must reach your HA instance over the internet:
 - **Reverse proxy / port-forwarding**: Ensure TCP 443 is forwarded to HA and a valid TLS certificate is in place.
 - **No public access**: Use a self-hosted GitHub Actions runner inside your network instead of the default GitHub-hosted runner.
 
-## Optional post-merge REST token
+## Optional script notification token
 
-Default sync scripts only call the HA REST notification endpoint when you opt in by setting `HA_NOTIFY_URL` in the runtime environment. If you enable the optional REST API snippet in `hooks/post-merge` or script-level notifications, provide a valid local endpoint and token-bearing environment separately, and keep them out of tracked files.
+Shell scripts can send best-effort HA persistent notifications. This feature depends on `curl` and `jq` being available on the HA host. For authenticated local API calls, expose one of:
+
+- `SUPERVISOR_TOKEN` (preferred when running in supervised/add-on context)
+- `HA_NOTIFY_TOKEN` (manual fallback bearer token)
+
+If neither token is present, notification calls are skipped entirely. The notification endpoint defaults to `http://localhost:8123/api/services/persistent_notification/create` and can be overridden by setting `HA_NOTIFY_URL` in the environment. Missing `curl` or `jq` will also cause notifications to be silently skipped; git operations always continue regardless.
+
+## Automatic reloads and restarts after merges
+
+`hooks/post-merge` now calls `/config/scripts/ha_apply_changes.sh` after each
+successful merge on the HA host.
+
+- Reload-only changes: the script reloads core config, automations, scripts,
+  and scenes as needed.
+- Restart-required changes: the script triggers a full Home Assistant restart
+  when merged files touch paths such as `configuration.yaml`,
+  `custom_components/`, `packages/`, or `.storage/`.
+
+To keep that behavior active across restarts, expose this shell command in
+`configuration.yaml` and use the startup automation from `automations/meta_git.yaml`:
+
+```yaml
+shell_command:
+  install_git_hooks: /bin/bash /config/scripts/install_git_hooks.sh
+```

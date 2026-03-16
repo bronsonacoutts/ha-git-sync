@@ -9,14 +9,14 @@
 #     chmod +x /config/.git/hooks/post-merge
 #
 # What it does:
-#   Prints a confirmation that the merge completed. Optionally, uncomment one
-#   of the HA reload/restart commands below to automatically apply config
-#   changes after every pull.
+#   After every successful merge, delegates to scripts/ha_apply_changes.sh so
+#   the HA host reloads what it can and restarts when merged files require it.
 #
 # For reusable sync lifecycle hook directories, see hooks/README.md.
 #
-# NOTE: Restarting HA automatically after every pull is convenient but carries
-# risk. Review incoming changes before enabling auto-restart in production.
+# NOTE: Automatic reloads and restarts are convenient but still affect the live
+# HA instance. Review the apply script and your change-management approach
+# before enabling this in production.
 
 set -euo pipefail
 

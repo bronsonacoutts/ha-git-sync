@@ -23,21 +23,12 @@ maintenance_git_push_config:
     Debounced HA-to-GitHub publish: waits for a 3-minute quiet window after the
     last UI-backed config change, then runs the full reconcile flow. mode:
     restart resets the timer on every new trigger so rapid edits are batched.
+    Skips starting a new sync if one has started or completed within the last
+    2 minutes.
   sequence:
+    - condition: template
+      value_template: >-
+        {{ (now() - states.script.maintenance_git_sync_config.last_changed).total_seconds() > 120 }}
     - delay: "00:03:00"
-    - service: script.maintenance_git_sync_config
+    - action: script.maintenance_git_sync_config
   mode: restart
-
-maintenance_git_status:
-  alias: "[Maintenance] Git Status"
-  description: "Check git status of config directory"
-  sequence:
-    - service: shell_command.git_status
-  mode: single
-
-maintenance_fix_automation_aliases:
-  alias: "[Maintenance] Fix Automation Aliases"
-  description: "Optional: normalize automation aliases to [Area] Action (Trigger/Context) format"
-  sequence:
-    - service: shell_command.fix_automation_aliases
-  mode: single
