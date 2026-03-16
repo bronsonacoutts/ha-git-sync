@@ -53,7 +53,7 @@ cat /config/.ssh/id_ed25519.pub
 
 Copy the entire output, then:
 
-1. Go to your GitHub repository: `https://github.com/yourusername/home-assistant-config`
+1. Go to your GitHub repository: `https://github.com/yourusername/your-ha-config`
 2. Navigate to **Settings** → **Deploy keys**
 3. Click **Add deploy key**
 4. Title: `Home Assistant Config Sync`
@@ -99,11 +99,11 @@ cd /config
 git remote -v
 
 # If using HTTPS, change to SSH
-git remote set-url origin git@github.com:yourusername/home-assistant-config.git
+git remote set-url origin git@github.com:yourusername/your-ha-config.git
 
 # Verify the change
 git remote -v
-# Should show: git@github.com:yourusername/home-assistant-config.git
+# Should show: git@github.com:yourusername/your-ha-config.git
 ```
 
 ### Step 5: Configure Git User Information
@@ -219,7 +219,7 @@ chmod 600 /config/.git-credentials
 cd /config
 
 # Replace <username>, <PAT>, and repository name
-git remote set-url origin https://<username>:<PAT>@github.com/<username>/home-assistant-config.git
+git remote set-url origin https://<username>:<PAT>@github.com/<username>/your-ha-config.git
 ```
 
 ⚠️ **Warning**: The token is stored in `.git/config` which may be readable.
@@ -473,7 +473,7 @@ cd /config
 # 1. Set up SSH (follow SSH setup steps above)
 
 # 2. Change remote URL
-git remote set-url origin git@github.com:yourusername/home-assistant-config.git
+git remote set-url origin git@github.com:yourusername/your-ha-config.git
 
 # 3. Test
 git pull origin main
@@ -490,7 +490,7 @@ cd /config
 # 1. Set up HTTPS (follow HTTPS setup steps above)
 
 # 2. Change remote URL
-git remote set-url origin https://github.com/yourusername/home-assistant-config.git
+git remote set-url origin https://github.com/yourusername/your-ha-config.git
 
 # 3. Configure credentials (credential helper or embed PAT)
 

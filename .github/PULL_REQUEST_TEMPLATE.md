@@ -1,22 +1,27 @@
 ## Summary
 
-<!-- What does this PR do and why? -->
+Describe what changed and why.
 
 ## Type of change
 
+- [ ] Docs
 - [ ] Bug fix
-- [ ] New feature / example
-- [ ] Documentation update
-- [ ] Chore / refactor
+- [ ] Reliability/CI improvement
+- [ ] Other
+
+## Validation
+
+- [ ] I ran relevant scripts/workflows locally or in CI.
+- [ ] For shell script changes, I ran `shellcheck`; for YAML changes, I ran `yamllint` (locally or in CI).
+- [ ] I verified no secrets were introduced.
+- [ ] I verified core sync behavior is unchanged unless this is an explicit bug fix.
 
 ## Checklist
 
-- [ ] Shell scripts pass `shellcheck` with no errors or warnings.
-- [ ] YAML files are valid (checked with `yamllint` or a validator).
-- [ ] No real secrets, tokens, or private keys are included.
-- [ ] Documentation updated where behaviour, paths, or variables changed.
-- [ ] Branch is up to date with `main`.
+- [ ] Small, focused scope.
+- [ ] Linked issue (if applicable).
+- [ ] Updated docs (if behavior/user flow changed).
 
-## Related issues
+## Risk notes
 
-<!-- Closes #NNN -->
+List any risks and rollback approach.

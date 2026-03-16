@@ -23,6 +23,13 @@ Home Assistant config changes are easy to lose track of when edits happen from m
 - **Security guardrails:** hooks, safe defaults, and documented token/secret handling.
 - **Template-based onboarding:** ready-to-merge examples for existing HA instances.
 
+## Repository role
+
+`ha-git-sync` is the canonical public core for Git-backed Home Assistant sync.
+
+- Private repos such as a real `home-assistant-config` deployment should consume these scripts and workflows, not publish them.
+- HACS-facing experiences can layer on top of this core. The companion repo `hass-autosync-lint` is intended to package Home Assistant-native setup and status plumbing around the same sync model.
+
 ## Architecture
 
 ```mermaid
@@ -50,7 +57,7 @@ How to read this: local HA changes and repo changes converge through sync jobs; 
    - Follow [docs/git-setup.md](docs/git-setup.md).
    - Keep credentials in secure HA secrets paths; never hardcode in tracked files.
 4. **Enable workflows**
-   - Optional upstream sync (`.github/workflows/upstream-sync-pr.yml`): create `.github/upstream-sync.enabled`.
+   - Optional upstream sync (`.github/workflows/upstream-sync.yml`): create `.github/upstream-sync.enabled`.
    - Optional alias autocorrect: create `.github/automation-alias-autocorrect.enabled`.
 5. **Run first sync safely**
    - Run `scripts/git_status.sh`, then `scripts/git_sync.sh` from `/config`.
@@ -159,7 +166,14 @@ If your source-of-truth is GitHub instead of local HA, do **not** use the defaul
 
 ## Notifications
 
-This template uses the GitHub Actions webhook flow for remote notifications (`.github/workflows/notify-ha.yml` + `HA_WEBHOOK_URL`). Local shell scripts focus on sync operations and do not call the HA REST notification endpoint.
+This template uses the GitHub Actions webhook flow for remote notifications (`.github/workflows/notify-ha.yml` + `HA_WEBHOOK_URL`).
+
+Shell scripts emit best-effort Home Assistant persistent notifications. For authenticated local API calls, set one of:
+
+- `SUPERVISOR_TOKEN` (preferred in supervised/add-on contexts)
+- `HA_NOTIFY_TOKEN` (manual fallback bearer token)
+
+Without either token, notification calls are skipped entirely and never block git operations. The notification endpoint defaults to `http://localhost:8123/api/services/persistent_notification/create` and can be overridden via `HA_NOTIFY_URL`.
 
 ## Troubleshooting
 
@@ -189,6 +203,9 @@ Yes, with two requirements: (1) your `configuration.yaml` must include `automati
 
 **Can I run this for multiple HA instances?**  
 Yes, but keep one repo/branch strategy per instance to avoid accidental cross-overwrites.
+
+**How does this relate to `hass-autosync-lint`?**
+`ha-git-sync` is the public core sync toolkit. `hass-autosync-lint` is the companion HACS integration layer intended to package Home Assistant-native setup, status, and repair plumbing around the same sync model.
 
 See full FAQ: [docs/faq.md](docs/faq.md)
 

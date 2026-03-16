@@ -8,6 +8,10 @@ The sync job can merge and commit tracked changes. Use branch protection, review
 
 Yes. Private repositories are recommended for most users.
 
+## How does this relate to hass-autosync-lint?
+
+`ha-git-sync` is the canonical public core. `hass-autosync-lint` is intended to be the HACS-distributed Home Assistant integration layer that wraps this sync model with setup, status, and repair plumbing.
+
 ## Does this work if I make changes from the Home Assistant UI?
 
 Usually yes. UI changes that are persisted to `/config` files are captured by sync jobs.
@@ -20,7 +24,7 @@ Yes, but use separate repositories or clearly isolated branch strategies per ins
 
 No. Both are optional and disabled by default. Enable only what you need.
 
-## What happens if upstream template updates conflict with my setup?
+## What happens if upstream core updates conflict with my setup?
 
 The optional upstream sync workflow reports conflict and stops PR creation. Resolve manually, then rerun.
 

@@ -8,12 +8,13 @@
 
 ## Final post body
 
-Hi everyone — I’m sharing **HA Git Sync**, a template-focused workflow to keep Home Assistant config reproducible, auditable, and easier to recover.
+Hi everyone — I’m sharing **HA Git Sync**, a public core workflow to keep Home Assistant config reproducible, auditable, and easier to recover.
 
 ### What it does
 
 - Bi-directional sync model between `/config` and GitHub.
 - Optional GitHub Actions automations for upstream template sync and alias autocorrection PRs.
+- Companion HACS integration path via `hass-autosync-lint` for people who want a Home Assistant-native wrapper.
 - Security-first defaults: optional features are off by default, and branch-protection-friendly checks are expected.
 
 ### Why I built it
