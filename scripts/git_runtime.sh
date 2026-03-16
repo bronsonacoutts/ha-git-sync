@@ -119,7 +119,7 @@ acquire_sync_lock() {
 }
 
 prepare_repo() {
-    cd "$REPO_DIR"
+    cd "$REPO_DIR" || return 1
     export HA_GIT_AUTOMATED=1
     acquire_sync_lock
     remove_stale_git_locks
