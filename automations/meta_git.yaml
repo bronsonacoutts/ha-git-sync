@@ -35,9 +35,9 @@
     action: script.turn_on
   mode: single
 
-- alias: "[Maintenance] Publish Git Config After UI-backed Changes"
+- alias: "[Maintenance] Push Git Config After UI-backed Changes"
   id: '1767773315131'
-  description: "Tags: Maintenance, Git, Publish, UI - Debounced publish after dashboard or YAML reload activity initiated from the HA UI."
+  description: "Tags: Maintenance, Git, Push, UI - Debounced publish after dashboard or YAML reload activity initiated from the HA UI."
   trigger:
   - platform: event
     event_type: lovelace_updated
