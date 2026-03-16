@@ -6,7 +6,7 @@ set -euo pipefail
 # Auto-recovers from stale locks, serializes syncs, and exits clearly.
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-# shellcheck source=./git_runtime.sh
+# shellcheck source=scripts/git_runtime.sh
 . "${SCRIPT_DIR}/git_runtime.sh"
 
 prepare_repo

@@ -14,7 +14,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="${HA_CONFIG_DIR:-$(git -C "${SCRIPT_DIR}/.." rev-parse --show-toplevel 2>/dev/null || echo /config)}"
 export HA_CONFIG_DIR="${REPO_ROOT}"
 
-# shellcheck source=./git_runtime.sh
+# shellcheck source=scripts/git_runtime.sh
 . "${SCRIPT_DIR}/git_runtime.sh"
 
 BEFORE_REF="${1:-}"
