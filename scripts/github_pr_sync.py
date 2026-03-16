@@ -18,6 +18,7 @@ TOKEN = (
     or os.environ.get("GH_TOKEN")
     or os.environ.get("GITHUB_TOKEN")
 )
+HTTP_TIMEOUT = float(os.environ.get("GITHUB_HTTP_TIMEOUT", "30"))
 
 
 class GitHubApiError(RuntimeError):
@@ -38,7 +39,7 @@ def api_request(method: str, path: str, payload: dict[str, Any] | None = None) -
 
     req = request.Request(f"{API_URL}{path}", data=body, headers=headers, method=method)
     try:
-        with request.urlopen(req) as response:
+        with request.urlopen(req, timeout=HTTP_TIMEOUT) as response:
             raw = response.read().decode("utf-8")
     except error.HTTPError as exc:
         detail = exc.read().decode("utf-8", "replace")
